@@ -1,6 +1,8 @@
-import { z } from "zod";
-import { UserValidations } from "./user.validations";
-
-export type adminPayload = z.infer<
-  typeof UserValidations.createAdminValidationSchema
->;
+export type TAdminPayload = {
+  password: string;
+  admin: {
+    email: string;
+    name: string;
+    phone: string;
+  };
+};

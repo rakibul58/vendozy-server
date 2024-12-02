@@ -1,10 +1,10 @@
 import config from "../../../config";
-import { adminPayload } from "./user.interface";
 import * as bcrypt from "bcrypt";
 import { Admin, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
+import { TAdminPayload } from "./user.interface";
 
-const createAdminInDb = async (payload: adminPayload): Promise<Admin> => {
+const createAdminInDb = async (payload: TAdminPayload): Promise<Admin> => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.salt_rounds)
