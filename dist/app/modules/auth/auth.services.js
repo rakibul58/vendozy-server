@@ -51,17 +51,23 @@ const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const bcrypt = __importStar(require("bcrypt"));
 const jwtHelpers_1 = require("../../../helpers/jwtHelpers");
 const config_1 = __importDefault(require("../../../config"));
+const AppError_1 = __importDefault(require("../../errors/AppError"));
+const http_status_codes_1 = require("http-status-codes");
 const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    // checking user exists in the db
     const userData = yield prisma_1.default.user.findUniqueOrThrow({
         where: {
             email: payload.email,
             status: client_1.UserStatus.ACTIVE,
         },
     });
+    // comparing password
     const isCorrectPassword = yield bcrypt.compare(payload.password, userData.password);
+    // throwing error for wrong password
     if (!isCorrectPassword) {
-        throw new Error("Password incorrect!");
+        throw new AppError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, "Password doesn't match!");
     }
+    // generating access token and refresh token
     const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
         email: userData.email,
         role: userData.role,
@@ -76,6 +82,63 @@ const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
         needPasswordChange: userData.needPasswordChange,
     };
 });
+const refreshToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    let decodedData;
+    // decoding refresh token
+    try {
+        decodedData = jwtHelpers_1.jwtHelpers.verifyToken(token, config_1.default.jwt.refresh_token_secret);
+    }
+    catch (err) {
+        throw new AppError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, "You are not authorized!");
+    }
+    // checking if the user exists in the db
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: decodedData.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    // generating new access token
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    return {
+        accessToken,
+        needPasswordChange: userData.needPasswordChange,
+    };
+});
+const changePassword = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    // checking if the user exists in the db
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: user.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    // comparing password
+    const isCorrectPassword = yield bcrypt.compare(payload.oldPassword, userData.password);
+    if (!isCorrectPassword) {
+        throw new AppError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, "Password doesn't match!");
+    }
+    // hashing the new password
+    const hashedPassword = yield bcrypt.hash(payload.newPassword, Number(config_1.default.salt_rounds));
+    // updating the new password
+    yield prisma_1.default.user.update({
+        where: {
+            email: userData.email,
+        },
+        data: {
+            password: hashedPassword,
+            needPasswordChange: false,
+        },
+    });
+    return {
+        message: "Password updated successfully!",
+    };
+});
 exports.AuthServices = {
     loginUser,
+    refreshToken,
+    changePassword
 };
