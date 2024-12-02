@@ -18,7 +18,7 @@ model User {
   email              String     @unique
   password           String
   role               UserRole
-  needPasswordChange Boolean    @default(true)
+  needPasswordChange Boolean    @default(false)
   status             UserStatus @default(ACTIVE)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -30,6 +30,8 @@ model User {
 model Admin {
   id     String @id @default(uuid())
   email  String @unique
+  name   String
+  phone  String @unique
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
 
@@ -37,7 +39,7 @@ model Admin {
 }
 
 enum UserRole {
-  Admin
+  ADMIN
   VENDOR
   CUSTOMER
 }
