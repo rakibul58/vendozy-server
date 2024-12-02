@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "repository": "",
-  "author": "Rakibul Hasan <rhrahi14@gmail.com>",
+  "author": "Rakibul Hasan",
   "license": "MIT",
   "scripts": {
     "prod": "node dist/server.js",
