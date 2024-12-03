@@ -72,18 +72,18 @@ model Customer {
 }
 
 model Product {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   name           String
   description    String
-  price          Decimal  @db.Decimal(10, 2)
-  category       Category @relation(fields: [categoryId], references: [id])
-  categoryId     String
-  vendor         Vendor   @relation(fields: [vendorId], references: [id])
+  price          Decimal   @db.Decimal(10, 2)
+  category       Category? @relation(fields: [categoryId], references: [id])
+  categoryId     String?
+  vendor         Vendor    @relation(fields: [vendorId], references: [id])
   vendorId       String
   images         String[]
   inventoryCount Int
-  discount       Decimal? @db.Decimal(5, 2)
-  isFlashSale    Boolean  @default(false)
+  discount       Decimal?  @db.Decimal(5, 2)
+  isFlashSale    Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -99,7 +99,7 @@ model Category {
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  isDeleted  Boolean   @default(false)
+  isDeleted Boolean   @default(false)
   products  Product[]
 
   @@map("categories")

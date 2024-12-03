@@ -21,8 +21,10 @@ const getAllCategoryFromDB = async (
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filters;
 
+  // there would be an array of conditions
   const andConditions: Prisma.CategoryWhereInput[] = [];
 
+  //   adding the search term condition
   if (searchTerm) {
     andConditions.push({
       OR: ["name", "description"].map((field) => ({
@@ -34,6 +36,7 @@ const getAllCategoryFromDB = async (
     });
   }
 
+  //   adding the conditions of filter data
   if (Object.keys(filterData).length > 0) {
     const filterConditions = Object.keys(filterData).map((key) => ({
       [key]: {
@@ -43,10 +46,12 @@ const getAllCategoryFromDB = async (
     andConditions.push(...filterConditions);
   }
 
+  //    deleted record will not be fetched
   andConditions.push({
     isDeleted: false,
   });
 
+  //   if there is not and condition then empty object would be sent
   const whereConditions: Prisma.CategoryWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
@@ -78,7 +83,62 @@ const getCategoryByIdFromDB = async (id: string) => {
   const result = await prisma.category.findUniqueOrThrow({
     where: {
       id,
+      isDeleted: false,
     },
+  });
+
+  return result;
+};
+
+const updateCategoryIntoDB = async (
+  id: string,
+  data: Partial<TCategoryPayload>
+): Promise<Category> => {
+  await prisma.category.findUniqueOrThrow({
+    where: {
+      id,
+      isDeleted: false,
+    },
+  });
+
+  const result = await prisma.category.update({
+    where: {
+      id,
+    },
+    data,
+  });
+
+  return result;
+};
+
+const deleteCategoryFromDB = async (id: string): Promise<Category | null> => {
+  await prisma.category.findUniqueOrThrow({
+    where: {
+      id,
+      isDeleted: false,
+    },
+  });
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    const categoryDeletedData = await transactionClient.category.update({
+      where: {
+        id,
+      },
+      data: {
+        isDeleted: true,
+      },
+    });
+
+    await transactionClient.product.updateMany({
+      where: {
+        categoryId: id,
+      },
+      data: {
+        categoryId: null,
+      },
+    });
+
+    return categoryDeletedData;
   });
 
   return result;
@@ -87,5 +147,7 @@ const getCategoryByIdFromDB = async (id: string) => {
 export const CategoryServices = {
   createCategoryInDB,
   getAllCategoryFromDB,
-  getCategoryByIdFromDB
+  getCategoryByIdFromDB,
+  updateCategoryIntoDB,
+  deleteCategoryFromDB,
 };

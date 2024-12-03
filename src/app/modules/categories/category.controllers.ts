@@ -15,7 +15,7 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllCategoryFromDB = catchAsync(async (req: Request, res: Response) => {
+const getAllCategory = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, ["name", "description", "searchTerm"]);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
   const result = await CategoryServices.getAllCategoryFromDB(filters, options);
@@ -29,21 +29,46 @@ const getAllCategoryFromDB = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getSingleCategoryFromDB = catchAsync(
-  async (req: Request, res: Response) => {
-    const result = await CategoryServices.getCategoryByIdFromDB(req.params.id);
+const getSingleCategory = catchAsync(async (req: Request, res: Response) => {
+  const result = await CategoryServices.getCategoryByIdFromDB(req.params.id);
 
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: "Category retrieved successfully",
-      data: result,
-    });
-  }
-);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Category retrieved successfully",
+    data: result,
+  });
+});
+
+const updateCategory = catchAsync(async (req: Request, res: Response) => {
+  const result = await CategoryServices.updateCategoryIntoDB(
+    req.params.id,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Category updated successfully",
+    data: result,
+  });
+});
+
+const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+  const result = await CategoryServices.deleteCategoryFromDB(req.params.id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Category deleted successfully",
+    data: result,
+  });
+});
 
 export const CategoryControllers = {
   createCategory,
-  getAllCategoryFromDB,
-  getSingleCategoryFromDB,
+  getAllCategory,
+  getSingleCategory,
+  updateCategory,
+  deleteCategory
 };

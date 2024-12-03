@@ -9,13 +9,21 @@ const router = Router();
 
 router
   .route("/")
-  .get(CategoryControllers.getAllCategoryFromDB)
+  .get(CategoryControllers.getAllCategory)
   .post(
     auth(UserRole.ADMIN),
     validateRequest(CategoryValidations.createCategoryValidationSchema),
     CategoryControllers.createCategory
   );
 
-router.route("/:id").get(CategoryControllers.getSingleCategoryFromDB);
+router
+  .route("/:id")
+  .get(CategoryControllers.getSingleCategory)
+  .put(
+    auth(UserRole.ADMIN),
+    validateRequest(CategoryValidations.updateCategoryValidationSchema),
+    CategoryControllers.updateCategory
+  )
+  .delete(auth(UserRole.ADMIN), CategoryControllers.deleteCategory);
 
 export const CategoryRoutes = router;
