@@ -168,9 +168,49 @@ const forgotPassword = async (payload: { email: string }) => {
   };
 };
 
+const resetPassword = async (
+  token: string,
+  payload: { id: string; password: string }
+) => {
+  await prisma.user.findUniqueOrThrow({
+    where: {
+      id: payload.id,
+      status: UserStatus.ACTIVE,
+    },
+  });
+
+  const isValidToken = jwtHelpers.verifyToken(
+    token,
+    config.jwt.reset_pass_secret as Secret
+  );
+
+  if (!isValidToken) {
+    throw new AppError(StatusCodes.FORBIDDEN, "Token is not valid!");
+  }
+
+  // generating hash password
+  const password = await bcrypt.hash(
+    payload.password,
+    Number(config.salt_rounds)
+  );
+
+  // update password in the database
+  await prisma.user.update({
+    where: {
+      id: payload.id,
+    },
+    data: {
+      password,
+    },
+  });
+
+  return { message: "Password Reset successfully!" };
+};
+
 export const AuthServices = {
   loginUser,
   refreshToken,
   changePassword,
   forgotPassword,
+  resetPassword
 };
