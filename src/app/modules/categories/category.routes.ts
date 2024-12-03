@@ -9,10 +9,13 @@ const router = Router();
 
 router
   .route("/")
+  .get(CategoryControllers.getAllCategoryFromDB)
   .post(
     auth(UserRole.ADMIN),
     validateRequest(CategoryValidations.createCategoryValidationSchema),
     CategoryControllers.createCategory
   );
+
+router.route("/:id").get(CategoryControllers.getSingleCategoryFromDB);
 
 export const CategoryRoutes = router;
