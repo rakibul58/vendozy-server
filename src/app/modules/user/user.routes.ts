@@ -15,4 +15,18 @@ router
     UserControllers.createAdmin
   );
 
+router
+  .route("/create-vendor")
+  .post(
+    validateRequest(UserValidations.createVendorValidationSchema),
+    UserControllers.createVendor
+  );
+
+router
+  .route("/create-customer")
+  .post(
+    validateRequest(UserValidations.createCustomerValidationSchema),
+    UserControllers.createCustomer
+  );
+
 export const UserRoutes = router;

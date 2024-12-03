@@ -14,6 +14,28 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createVendor = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.createVendorInDB(req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: "Vendor Registered successfully!",
+    data: result,
+  });
+});
+
+const createCustomer = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.createCustomerInDB(req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: "Customer Registered successfully!",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createAdmin,
+  createVendor,
+  createCustomer
 };
