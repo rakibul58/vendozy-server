@@ -6,6 +6,8 @@ import config from "../../../config";
 import { JwtPayload, Secret } from "jsonwebtoken";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
+import { sendEmail } from "../../../helpers/sendEmail";
+import { generatePasswordResetEmailTemplate } from "../../../helpers/generatePasswordResetEmail";
 
 const loginUser = async (payload: { email: string; password: string }) => {
   // checking user exists in the db
@@ -133,8 +135,42 @@ const changePassword = async (
   };
 };
 
+const forgotPassword = async (payload: { email: string }) => {
+  // checking if the user exist
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: payload.email,
+      status: UserStatus.ACTIVE,
+    },
+  });
+
+  // generating reset password token
+  const resetPassToken = jwtHelpers.generateToken(
+    { email: userData.email, role: userData.role },
+    config.jwt.reset_pass_secret as Secret,
+    config.jwt.reset_pass_token_expires_in as string
+  );
+
+  // reset password ui link
+  const resetPassLink = `${config.reset_pass_link}/reset-password?userId=${userData.id}&token=${resetPassToken}`;
+
+  // getting the email body
+  const emailBody = generatePasswordResetEmailTemplate({
+    resetPassLink,
+    companyName: "Vendozy",
+  });
+
+  // sending email through utility function
+  await sendEmail(userData.email, emailBody);
+
+  return {
+    message: "Password reset link sent to your email",
+  };
+};
+
 export const AuthServices = {
   loginUser,
   refreshToken,
-  changePassword
+  changePassword,
+  forgotPassword,
 };
