@@ -24,19 +24,84 @@ model User {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   admin              Admin?
+  vendor             Vendor?
+  customer           Customer?
 
   @@map("users")
 }
 
 model Admin {
-  id     String @id @default(uuid())
-  email  String @unique
-  name   String
-  phone  String @unique
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  id     String  @id @default(uuid())
+  email  String  @unique
+  name   String?
+  phone  String?
+  userId String  @unique
+  user   User    @relation(fields: [userId], references: [id])
 
   @@map("admins")
+}
+
+model Vendor {
+  id          String     @id @default(uuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDeleted   Boolean    @default(false)
+  email       String     @unique
+  phone       String
+  name        String
+  logo        String?
+  description String?
+  status      ShopStatus @default(ACTIVE)
+  products    Product[]
+
+  @@map("vendors")
+}
+
+model Customer {
+  id         String  @id @default(uuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  phone      String
+  email      String  @unique
+  address    String
+  profileImg String?
+  isDeleted  Boolean @default(false)
+
+  @@map("customers")
+}
+
+model Product {
+  id             String   @id @default(uuid())
+  name           String
+  description    String
+  price          Decimal  @db.Decimal(10, 2)
+  category       Category @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  vendor         Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId       String
+  images         String[]
+  inventoryCount Int
+  discount       Decimal? @db.Decimal(5, 2)
+  isFlashSale    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  @@map("products")
+}
+
+model Category {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@map("categories")
 }
 
 enum UserRole {
@@ -48,5 +113,11 @@ enum UserRole {
 enum UserStatus {
   DELETED
   SUSPENDED
+  ACTIVE
+}
+
+enum ShopStatus {
+  DELETED
+  BLACKLISTED
   ACTIVE
 }

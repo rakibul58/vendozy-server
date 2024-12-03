@@ -53,6 +53,8 @@ const jwtHelpers_1 = require("../../../helpers/jwtHelpers");
 const config_1 = __importDefault(require("../../../config"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const http_status_codes_1 = require("http-status-codes");
+const sendEmail_1 = require("../../../helpers/sendEmail");
+const generatePasswordResetEmail_1 = require("../../../helpers/generatePasswordResetEmail");
 const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     // checking user exists in the db
     const userData = yield prisma_1.default.user.findUniqueOrThrow({
@@ -137,8 +139,57 @@ const changePassword = (user, payload) => __awaiter(void 0, void 0, void 0, func
         message: "Password updated successfully!",
     };
 });
+const forgotPassword = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    // checking if the user exist
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: payload.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    // generating reset password token
+    const resetPassToken = jwtHelpers_1.jwtHelpers.generateToken({ email: userData.email, role: userData.role }, config_1.default.jwt.reset_pass_secret, config_1.default.jwt.reset_pass_token_expires_in);
+    // reset password ui link
+    const resetPassLink = `${config_1.default.reset_pass_link}/reset-password?userId=${userData.id}&token=${resetPassToken}`;
+    // getting the email body
+    const emailBody = (0, generatePasswordResetEmail_1.generatePasswordResetEmailTemplate)({
+        resetPassLink,
+        companyName: "Vendozy",
+    });
+    // sending email through utility function
+    yield (0, sendEmail_1.sendEmail)(userData.email, emailBody);
+    return {
+        message: "Password reset link sent to your email",
+    };
+});
+const resetPassword = (token, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            id: payload.id,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const isValidToken = jwtHelpers_1.jwtHelpers.verifyToken(token, config_1.default.jwt.reset_pass_secret);
+    if (!isValidToken) {
+        throw new AppError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "Token is not valid!");
+    }
+    // generating hash password
+    const password = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
+    // update password in the database
+    yield prisma_1.default.user.update({
+        where: {
+            id: payload.id,
+        },
+        data: {
+            password,
+        },
+    });
+    return { message: "Password Reset successfully!" };
+});
 exports.AuthServices = {
     loginUser,
     refreshToken,
-    changePassword
+    changePassword,
+    forgotPassword,
+    resetPassword
 };
