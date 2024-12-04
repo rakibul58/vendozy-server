@@ -14,4 +14,10 @@ const router = (0, express_1.Router)();
 router
     .route("/create-admin")
     .post((0, auth_1.default)(client_1.UserRole.ADMIN), (0, validateRequest_1.default)(user_validations_1.UserValidations.createAdminValidationSchema), user_controllers_1.UserControllers.createAdmin);
+router
+    .route("/create-vendor")
+    .post((0, validateRequest_1.default)(user_validations_1.UserValidations.createVendorValidationSchema), user_controllers_1.UserControllers.createVendor);
+router
+    .route("/create-customer")
+    .post((0, validateRequest_1.default)(user_validations_1.UserValidations.createCustomerValidationSchema), user_controllers_1.UserControllers.createCustomer);
 exports.UserRoutes = router;

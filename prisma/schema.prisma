@@ -11,7 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -42,31 +42,33 @@ model Admin {
 }
 
 model Vendor {
-  id          String     @id @default(uuid())
-  userId      String     @unique
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isDeleted   Boolean    @default(false)
-  email       String     @unique
-  phone       String
-  name        String
-  logo        String?
-  description String?
-  status      ShopStatus @default(ACTIVE)
-  products    Product[]
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDeleted     Boolean        @default(false)
+  email         String         @unique
+  phone         String
+  name          String
+  logo          String?
+  description   String?
+  status        ShopStatus     @default(ACTIVE)
+  products      Product[]
+  shopFollowers ShopFollower[]
 
   @@map("vendors")
 }
 
 model Customer {
-  id         String  @id @default(uuid())
-  userId     String  @unique
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String
-  phone      String
-  email      String  @unique
-  address    String
-  profileImg String?
-  isDeleted  Boolean @default(false)
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String         @unique
+  address       String
+  profileImg    String?
+  isDeleted     Boolean        @default(false)
+  shopsFollowed ShopFollower[]
 
   @@map("customers")
 }
@@ -84,6 +86,7 @@ model Product {
   inventoryCount Int
   discount       Decimal?  @db.Decimal(5, 2)
   isFlashSale    Boolean   @default(false)
+  averageRating  Float     @default(0.0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,6 +106,19 @@ model Category {
   products  Product[]
 
   @@map("categories")
+}
+
+model ShopFollower {
+  id         String   @id @default(uuid())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  vendor     Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId   String
+
+  createdAt DateTime @default(now())
+
+  @@unique([customerId, vendorId])
+  @@map("shop_followers")
 }
 
 enum UserRole {

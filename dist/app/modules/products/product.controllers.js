@@ -12,40 +12,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserControllers = void 0;
-const http_status_codes_1 = require("http-status-codes");
+exports.ProductControllers = void 0;
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
-const user_services_1 = require("./user.services");
-const createAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_services_1.UserServices.createAdminInDb(req.body);
+const product_services_1 = require("./product.services");
+const http_status_codes_1 = require("http-status-codes");
+const pick_1 = __importDefault(require("../../../shared/pick"));
+const product_constants_1 = require("./product.constants");
+const createProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield product_services_1.ProductServices.createProductInDB(req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.CREATED,
         success: true,
-        message: "Admin Registered successfully!",
+        message: "Product created successfully!",
         data: result,
     });
 }));
-const createVendor = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_services_1.UserServices.createVendorInDB(req.body);
+const getAllProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const filters = (0, pick_1.default)(req.query, product_constants_1.productFilterableFields);
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield product_services_1.ProductServices.getAllProductFromDB(filters, options, (_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.CREATED,
+        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: "Vendor Registered successfully!",
-        data: result,
+        message: "Products retrieved successfully",
+        meta: result.meta,
+        data: result.data,
     });
 }));
-const createCustomer = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_services_1.UserServices.createCustomerInDB(req.body);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.CREATED,
-        success: true,
-        message: "Customer Registered successfully!",
-        data: result,
-    });
-}));
-exports.UserControllers = {
-    createAdmin,
-    createVendor,
-    createCustomer
+exports.ProductControllers = {
+    createProduct,
+    getAllProduct,
 };

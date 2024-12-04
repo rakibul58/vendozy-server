@@ -68,6 +68,44 @@ const createAdminInDb = (payload) => __awaiter(void 0, void 0, void 0, function*
     }));
     return result;
 });
+const createVendorInDB = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
+    const userData = {
+        email: payload.vendor.email,
+        password: hashedPassword,
+        role: client_1.UserRole.VENDOR,
+    };
+    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        const userInsertData = yield transactionClient.user.create({
+            data: userData,
+        });
+        const createdVendorData = yield transactionClient.vendor.create({
+            data: Object.assign({ userId: userInsertData.id }, payload.vendor),
+        });
+        return createdVendorData;
+    }));
+    return result;
+});
+const createCustomerInDB = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
+    const userData = {
+        email: payload.customer.email,
+        password: hashedPassword,
+        role: client_1.UserRole.CUSTOMER,
+    };
+    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        const userInsertData = yield transactionClient.user.create({
+            data: userData,
+        });
+        const createdVendorData = yield transactionClient.customer.create({
+            data: Object.assign({ userId: userInsertData.id }, payload.customer),
+        });
+        return createdVendorData;
+    }));
+    return result;
+});
 exports.UserServices = {
     createAdminInDb,
+    createVendorInDB,
+    createCustomerInDB
 };
