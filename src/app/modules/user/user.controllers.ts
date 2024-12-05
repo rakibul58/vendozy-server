@@ -35,6 +35,7 @@ const createVendor = catchAsync(async (req: Request, res: Response) => {
     message: "Logged in successfully!",
     data: {
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       needPasswordChange: result.needPasswordChange,
     },
   });
@@ -60,6 +61,7 @@ const createCustomer = catchAsync(async (req: Request, res: Response) => {
     message: "Logged in successfully!",
     data: {
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       needPasswordChange: result.needPasswordChange,
     },
   });
@@ -68,7 +70,7 @@ const createCustomer = catchAsync(async (req: Request, res: Response) => {
 const getProfile = catchAsync(async (req: Request & { user?: any }, res: Response) => {
   const result = await UserServices.getUserProfileFromDB(req.user);
   sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Profile retrieved successfully!",
     data: result,

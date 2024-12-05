@@ -44,6 +44,7 @@ const createVendor = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         message: "Logged in successfully!",
         data: {
             accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
             needPasswordChange: result.needPasswordChange,
         },
     });
@@ -65,6 +66,7 @@ const createCustomer = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         message: "Logged in successfully!",
         data: {
             accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
             needPasswordChange: result.needPasswordChange,
         },
     });
@@ -72,7 +74,7 @@ const createCustomer = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
 const getProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_services_1.UserServices.getUserProfileFromDB(req.user);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.CREATED,
+        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
         message: "Profile retrieved successfully!",
         data: result,

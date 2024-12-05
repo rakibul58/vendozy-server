@@ -163,16 +163,16 @@ const forgotPassword = (payload) => __awaiter(void 0, void 0, void 0, function* 
     };
 });
 const resetPassword = (token, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    yield prisma_1.default.user.findUniqueOrThrow({
-        where: {
-            id: payload.id,
-            status: client_1.UserStatus.ACTIVE,
-        },
-    });
     const isValidToken = jwtHelpers_1.jwtHelpers.verifyToken(token, config_1.default.jwt.reset_pass_secret);
     if (!isValidToken) {
         throw new AppError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "Token is not valid!");
     }
+    yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: isValidToken.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
     // generating hash password
     const password = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
     // update password in the database
@@ -191,5 +191,5 @@ exports.AuthServices = {
     refreshToken,
     changePassword,
     forgotPassword,
-    resetPassword
+    resetPassword,
 };
