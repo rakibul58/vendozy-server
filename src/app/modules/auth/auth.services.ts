@@ -170,7 +170,7 @@ const forgotPassword = async (payload: { email: string }) => {
 
 const resetPassword = async (
   token: string,
-  payload: { id: string; password: string }
+  payload: { password: string }
 ) => {
   const isValidToken = jwtHelpers.verifyToken(
     token,
@@ -197,7 +197,7 @@ const resetPassword = async (
   // update password in the database
   await prisma.user.update({
     where: {
-      id: payload.id,
+      email: isValidToken.email,
     },
     data: {
       password,

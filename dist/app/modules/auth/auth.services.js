@@ -178,7 +178,7 @@ const resetPassword = (token, payload) => __awaiter(void 0, void 0, void 0, func
     // update password in the database
     yield prisma_1.default.user.update({
         where: {
-            id: payload.id,
+            email: isValidToken.email,
         },
         data: {
             password,
