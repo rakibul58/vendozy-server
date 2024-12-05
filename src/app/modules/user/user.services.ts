@@ -7,6 +7,8 @@ import {
   TCustomerPayload,
   TVendorPayload,
 } from "./user.interface";
+import { jwtHelpers } from "../../../helpers/jwtHelpers";
+import { JwtPayload, Secret } from "jsonwebtoken";
 
 const createAdminInDb = async (payload: TAdminPayload): Promise<Admin> => {
   const hashedPassword = await bcrypt.hash(
@@ -38,7 +40,7 @@ const createAdminInDb = async (payload: TAdminPayload): Promise<Admin> => {
   return result;
 };
 
-const createVendorInDB = async (payload: TVendorPayload): Promise<Vendor> => {
+const createVendorInDB = async (payload: TVendorPayload) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.salt_rounds)
@@ -50,7 +52,7 @@ const createVendorInDB = async (payload: TVendorPayload): Promise<Vendor> => {
     role: UserRole.VENDOR,
   };
 
-  const result = await prisma.$transaction(async (transactionClient) => {
+  const vendorSignUp = await prisma.$transaction(async (transactionClient) => {
     const userInsertData = await transactionClient.user.create({
       data: userData,
     });
@@ -65,12 +67,33 @@ const createVendorInDB = async (payload: TVendorPayload): Promise<Vendor> => {
     return createdVendorData;
   });
 
-  return result;
+  // generating access token and refresh token
+  const accessToken = jwtHelpers.generateToken(
+    {
+      email: vendorSignUp.email,
+      role: UserRole.VENDOR,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  const refreshToken = jwtHelpers.generateToken(
+    {
+      email: userData.email,
+      role: userData.role,
+    },
+    config.jwt.refresh_token_secret as Secret,
+    config.jwt.refresh_token_expires_in as string
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    needPasswordChange: false,
+  };
 };
 
-const createCustomerInDB = async (
-  payload: TCustomerPayload
-): Promise<Customer> => {
+const createCustomerInDB = async (payload: TCustomerPayload) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.salt_rounds)
@@ -82,26 +105,73 @@ const createCustomerInDB = async (
     role: UserRole.CUSTOMER,
   };
 
-  const result = await prisma.$transaction(async (transactionClient) => {
-    const userInsertData = await transactionClient.user.create({
-      data: userData,
-    });
+  const customerSignup = await prisma.$transaction(
+    async (transactionClient) => {
+      const userInsertData = await transactionClient.user.create({
+        data: userData,
+      });
 
-    const createdVendorData = await transactionClient.customer.create({
-      data: {
-        userId: userInsertData.id,
-        ...payload.customer,
+      const createdVendorData = await transactionClient.customer.create({
+        data: {
+          userId: userInsertData.id,
+          ...payload.customer,
+        },
+      });
+
+      return createdVendorData;
+    }
+  );
+
+  // generating access token and refresh token
+  const accessToken = jwtHelpers.generateToken(
+    {
+      email: customerSignup.email,
+      role: UserRole.CUSTOMER,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  const refreshToken = jwtHelpers.generateToken(
+    {
+      email: userData.email,
+      role: userData.role,
+    },
+    config.jwt.refresh_token_secret as Secret,
+    config.jwt.refresh_token_expires_in as string
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    needPasswordChange: false,
+  };
+};
+
+const getUserProfileFromDB = async (user: JwtPayload) => {
+  if (user.role === UserRole.ADMIN) {
+    return prisma.admin.findUniqueOrThrow({
+      where: {
+        email: user.email,
       },
     });
-
-    return createdVendorData;
-  });
-
-  return result;
+  } else if (user.role === UserRole.VENDOR) {
+    return prisma.vendor.findUniqueOrThrow({
+      where: {
+        email: user.email,
+      },
+    });
+  } else
+    return prisma.customer.findUniqueOrThrow({
+      where: {
+        email: user.email,
+      },
+    });
 };
 
 export const UserServices = {
   createAdminInDb,
   createVendorInDB,
-  createCustomerInDB
+  createCustomerInDB,
+  getUserProfileFromDB,
 };

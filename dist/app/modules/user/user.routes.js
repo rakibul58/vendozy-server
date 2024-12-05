@@ -20,4 +20,7 @@ router
 router
     .route("/create-customer")
     .post((0, validateRequest_1.default)(user_validations_1.UserValidations.createCustomerValidationSchema), user_controllers_1.UserControllers.createCustomer);
+router
+    .route("/me")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.VENDOR, client_1.UserRole.CUSTOMER), user_controllers_1.UserControllers.getProfile);
 exports.UserRoutes = router;

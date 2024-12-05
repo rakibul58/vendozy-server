@@ -24,9 +24,7 @@ const createVendorValidationSchema = z.object({
       name: z.string({
         required_error: "Name is required!",
       }),
-      email: z.string({
-        required_error: "Email is required!",
-      }),
+      email: z.string().optional(),
       phone: z.string({
         required_error: "Phone numbers is required!",
       }),

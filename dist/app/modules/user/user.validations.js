@@ -25,9 +25,7 @@ const createVendorValidationSchema = zod_1.z.object({
             name: zod_1.z.string({
                 required_error: "Name is required!",
             }),
-            email: zod_1.z.string({
-                required_error: "Email is required!",
-            }),
+            email: zod_1.z.string().optional(),
             phone: zod_1.z.string({
                 required_error: "Phone numbers is required!",
             }),

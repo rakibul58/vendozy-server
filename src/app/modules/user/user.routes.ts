@@ -29,4 +29,11 @@ router
     UserControllers.createCustomer
   );
 
+router
+  .route("/me")
+  .get(
+    auth(UserRole.ADMIN, UserRole.VENDOR, UserRole.CUSTOMER),
+    UserControllers.getProfile
+  );
+
 export const UserRoutes = router;

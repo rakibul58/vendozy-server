@@ -17,6 +17,7 @@ const http_status_codes_1 = require("http-status-codes");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const user_services_1 = require("./user.services");
+const config_1 = __importDefault(require("../../../config"));
 const createAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_services_1.UserServices.createAdminInDb(req.body);
     (0, sendResponse_1.default)(res, {
@@ -28,24 +29,58 @@ const createAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
 }));
 const createVendor = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_services_1.UserServices.createVendorInDB(req.body);
+    const { refreshToken, accessToken } = result;
+    res.cookie("accessToken", accessToken, {
+        secure: config_1.default.env === "development" ? false : true,
+        httpOnly: true,
+    });
+    res.cookie("refreshToken", refreshToken, {
+        secure: config_1.default.env === "development" ? false : true,
+        httpOnly: true,
+    });
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.CREATED,
+        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: "Vendor Registered successfully!",
-        data: result,
+        message: "Logged in successfully!",
+        data: {
+            accessToken: result.accessToken,
+            needPasswordChange: result.needPasswordChange,
+        },
     });
 }));
 const createCustomer = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_services_1.UserServices.createCustomerInDB(req.body);
+    const { refreshToken, accessToken } = result;
+    res.cookie("accessToken", accessToken, {
+        secure: config_1.default.env === "development" ? false : true,
+        httpOnly: true,
+    });
+    res.cookie("refreshToken", refreshToken, {
+        secure: config_1.default.env === "development" ? false : true,
+        httpOnly: true,
+    });
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Logged in successfully!",
+        data: {
+            accessToken: result.accessToken,
+            needPasswordChange: result.needPasswordChange,
+        },
+    });
+}));
+const getProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.getUserProfileFromDB(req.user);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.CREATED,
         success: true,
-        message: "Customer Registered successfully!",
+        message: "Profile retrieved successfully!",
         data: result,
     });
 }));
 exports.UserControllers = {
     createAdmin,
     createVendor,
-    createCustomer
+    createCustomer,
+    getProfile
 };

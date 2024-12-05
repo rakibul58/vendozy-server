@@ -50,6 +50,7 @@ const config_1 = __importDefault(require("../../../config"));
 const bcrypt = __importStar(require("bcrypt"));
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
+const jwtHelpers_1 = require("../../../helpers/jwtHelpers");
 const createAdminInDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
     const userData = {
@@ -75,7 +76,7 @@ const createVendorInDB = (payload) => __awaiter(void 0, void 0, void 0, function
         password: hashedPassword,
         role: client_1.UserRole.VENDOR,
     };
-    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendorSignUp = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
         const userInsertData = yield transactionClient.user.create({
             data: userData,
         });
@@ -84,7 +85,20 @@ const createVendorInDB = (payload) => __awaiter(void 0, void 0, void 0, function
         });
         return createdVendorData;
     }));
-    return result;
+    // generating access token and refresh token
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: vendorSignUp.email,
+        role: client_1.UserRole.VENDOR,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.refresh_token_secret, config_1.default.jwt.refresh_token_expires_in);
+    return {
+        accessToken,
+        refreshToken,
+        needPasswordChange: false,
+    };
 });
 const createCustomerInDB = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
@@ -93,7 +107,7 @@ const createCustomerInDB = (payload) => __awaiter(void 0, void 0, void 0, functi
         password: hashedPassword,
         role: client_1.UserRole.CUSTOMER,
     };
-    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+    const customerSignup = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
         const userInsertData = yield transactionClient.user.create({
             data: userData,
         });
@@ -102,10 +116,46 @@ const createCustomerInDB = (payload) => __awaiter(void 0, void 0, void 0, functi
         });
         return createdVendorData;
     }));
-    return result;
+    // generating access token and refresh token
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: customerSignup.email,
+        role: client_1.UserRole.CUSTOMER,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.refresh_token_secret, config_1.default.jwt.refresh_token_expires_in);
+    return {
+        accessToken,
+        refreshToken,
+        needPasswordChange: false,
+    };
+});
+const getUserProfileFromDB = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    if (user.role === client_1.UserRole.ADMIN) {
+        return prisma_1.default.admin.findUniqueOrThrow({
+            where: {
+                email: user.email,
+            },
+        });
+    }
+    else if (user.role === client_1.UserRole.VENDOR) {
+        return prisma_1.default.vendor.findUniqueOrThrow({
+            where: {
+                email: user.email,
+            },
+        });
+    }
+    else
+        return prisma_1.default.customer.findUniqueOrThrow({
+            where: {
+                email: user.email,
+            },
+        });
 });
 exports.UserServices = {
     createAdminInDb,
     createVendorInDB,
-    createCustomerInDB
+    createCustomerInDB,
+    getUserProfileFromDB,
 };
