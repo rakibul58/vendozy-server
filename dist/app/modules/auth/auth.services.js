@@ -84,6 +84,68 @@ const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
         needPasswordChange: userData.needPasswordChange,
     };
 });
+const customerRegistration = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
+    const userData = {
+        email: payload.customer.email,
+        password: hashedPassword,
+        role: client_1.UserRole.CUSTOMER,
+    };
+    const customerRegistrationData = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        const userInsertData = yield transactionClient.user.create({
+            data: userData,
+        });
+        const createdVendorData = yield transactionClient.customer.create({
+            data: Object.assign({ userId: userInsertData.id }, payload.customer),
+        });
+        return createdVendorData;
+    }));
+    // generating access token and refresh token
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: customerRegistrationData.email,
+        role: userData.role,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: customerRegistrationData.email,
+        role: userData.role,
+    }, config_1.default.jwt.refresh_token_secret, config_1.default.jwt.refresh_token_expires_in);
+    return {
+        accessToken,
+        refreshToken,
+        needPasswordChange: false,
+    };
+});
+const vendorRegistration = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
+    const userData = {
+        email: payload.vendor.email,
+        password: hashedPassword,
+        role: client_1.UserRole.VENDOR,
+    };
+    const vendorRegistrationData = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        const userInsertData = yield transactionClient.user.create({
+            data: userData,
+        });
+        const createdVendorData = yield transactionClient.vendor.create({
+            data: Object.assign({ userId: userInsertData.id }, payload.vendor),
+        });
+        return createdVendorData;
+    }));
+    // generating access token and refresh token
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: vendorRegistrationData.email,
+        role: userData.role,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: vendorRegistrationData.email,
+        role: userData.role,
+    }, config_1.default.jwt.refresh_token_secret, config_1.default.jwt.refresh_token_expires_in);
+    return {
+        accessToken,
+        refreshToken,
+        needPasswordChange: false,
+    };
+});
 const refreshToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
     let decodedData;
     // decoding refresh token
@@ -192,4 +254,6 @@ exports.AuthServices = {
     changePassword,
     forgotPassword,
     resetPassword,
+    customerRegistration,
+    vendorRegistration
 };

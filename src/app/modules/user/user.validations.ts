@@ -21,10 +21,10 @@ const createVendorValidationSchema = z.object({
       required_error: "Password is required",
     }),
     vendor: z.object({
-      name: z.string({
-        required_error: "Name is required!",
+      name: z.string().optional(),
+      email: z.string({
+        required_error: "Email is required!",
       }),
-      email: z.string().optional(),
       phone: z.string({
         required_error: "Phone numbers is required!",
       }),

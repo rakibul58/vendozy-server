@@ -32,6 +32,60 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const customerRegistration = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthServices.customerRegistration(req.body);
+
+  const { refreshToken, accessToken } = result;
+
+  res.cookie("accessToken", accessToken, {
+    secure: config.env === "development" ? false : true,
+    httpOnly: true,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    secure: config.env === "development" ? false : true,
+    httpOnly: true,
+  });
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Logged in successfully!",
+    data: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      needPasswordChange: result.needPasswordChange,
+    },
+  });
+});
+
+const vendorRegistration = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthServices.vendorRegistration(req.body);
+
+  const { refreshToken, accessToken } = result;
+
+  res.cookie("accessToken", accessToken, {
+    secure: config.env === "development" ? false : true,
+    httpOnly: true,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    secure: config.env === "development" ? false : true,
+    httpOnly: true,
+  });
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Logged in successfully!",
+    data: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      needPasswordChange: result.needPasswordChange,
+    },
+  });
+});
+
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
 
@@ -89,5 +143,7 @@ export const AuthControllers = {
   refreshToken,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  customerRegistration,
+  vendorRegistration,
 };

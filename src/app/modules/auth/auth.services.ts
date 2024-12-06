@@ -1,4 +1,4 @@
-import { UserStatus } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import * as bcrypt from "bcrypt";
 import { jwtHelpers } from "../../../helpers/jwtHelpers";
@@ -8,6 +8,7 @@ import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { sendEmail } from "../../../helpers/sendEmail";
 import { generatePasswordResetEmailTemplate } from "../../../helpers/generatePasswordResetEmail";
+import { TCustomerPayload, TVendorPayload } from "../user/user.interface";
 
 const loginUser = async (payload: { email: string; password: string }) => {
   // checking user exists in the db
@@ -52,6 +53,116 @@ const loginUser = async (payload: { email: string; password: string }) => {
     accessToken,
     refreshToken,
     needPasswordChange: userData.needPasswordChange,
+  };
+};
+
+const customerRegistration = async (payload: TCustomerPayload) => {
+  const hashedPassword = await bcrypt.hash(
+    payload.password,
+    Number(config.salt_rounds)
+  );
+
+  const userData = {
+    email: payload.customer.email,
+    password: hashedPassword,
+    role: UserRole.CUSTOMER,
+  };
+
+  const customerRegistrationData = await prisma.$transaction(
+    async (transactionClient) => {
+      const userInsertData = await transactionClient.user.create({
+        data: userData,
+      });
+
+      const createdVendorData = await transactionClient.customer.create({
+        data: {
+          userId: userInsertData.id,
+          ...payload.customer,
+        },
+      });
+
+      return createdVendorData;
+    }
+  );
+
+  // generating access token and refresh token
+  const accessToken = jwtHelpers.generateToken(
+    {
+      email: customerRegistrationData.email,
+      role: userData.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  const refreshToken = jwtHelpers.generateToken(
+    {
+      email: customerRegistrationData.email,
+      role: userData.role,
+    },
+    config.jwt.refresh_token_secret as Secret,
+    config.jwt.refresh_token_expires_in as string
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    needPasswordChange: false,
+  };
+};
+
+const vendorRegistration = async (payload: TVendorPayload) => {
+  const hashedPassword = await bcrypt.hash(
+    payload.password,
+    Number(config.salt_rounds)
+  );
+
+  const userData = {
+    email: payload.vendor.email,
+    password: hashedPassword,
+    role: UserRole.VENDOR,
+  };
+
+  const vendorRegistrationData = await prisma.$transaction(
+    async (transactionClient) => {
+      const userInsertData = await transactionClient.user.create({
+        data: userData,
+      });
+
+      const createdVendorData = await transactionClient.vendor.create({
+        data: {
+          userId: userInsertData.id,
+          ...payload.vendor,
+        },
+      });
+
+      return createdVendorData;
+    }
+  );
+
+  // generating access token and refresh token
+  const accessToken = jwtHelpers.generateToken(
+    {
+      email: vendorRegistrationData.email,
+      role: userData.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  const refreshToken = jwtHelpers.generateToken(
+    {
+      email: vendorRegistrationData.email,
+      role: userData.role,
+    },
+    config.jwt.refresh_token_secret as Secret,
+    config.jwt.refresh_token_expires_in as string
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    needPasswordChange: false,
   };
 };
 
@@ -168,10 +279,7 @@ const forgotPassword = async (payload: { email: string }) => {
   };
 };
 
-const resetPassword = async (
-  token: string,
-  payload: { password: string }
-) => {
+const resetPassword = async (token: string, payload: { password: string }) => {
   const isValidToken = jwtHelpers.verifyToken(
     token,
     config.jwt.reset_pass_secret as Secret
@@ -213,4 +321,6 @@ export const AuthServices = {
   changePassword,
   forgotPassword,
   resetPassword,
+  customerRegistration,
+  vendorRegistration
 };
