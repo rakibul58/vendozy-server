@@ -17,69 +17,41 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
 
 const createVendor = catchAsync(async (req: Request, res: Response) => {
   const result = await UserServices.createVendorInDB(req.body);
-  const { refreshToken, accessToken } = result;
-
-  res.cookie("accessToken", accessToken, {
-    secure: config.env === "development" ? false : true,
-    httpOnly: true,
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    secure: config.env === "development" ? false : true,
-    httpOnly: true,
-  });
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Logged in successfully!",
-    data: {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      needPasswordChange: result.needPasswordChange,
-    },
+    message: "Vendor in successfully!",
+    data: result,
   });
 });
 
 const createCustomer = catchAsync(async (req: Request, res: Response) => {
   const result = await UserServices.createCustomerInDB(req.body);
-  const { refreshToken, accessToken } = result;
-
-  res.cookie("accessToken", accessToken, {
-    secure: config.env === "development" ? false : true,
-    httpOnly: true,
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    secure: config.env === "development" ? false : true,
-    httpOnly: true,
-  });
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Logged in successfully!",
-    data: {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      needPasswordChange: result.needPasswordChange,
-    },
-  });
-});
-
-const getProfile = catchAsync(async (req: Request & { user?: any }, res: Response) => {
-  const result = await UserServices.getUserProfileFromDB(req.user);
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Profile retrieved successfully!",
+    message: "Customer in successfully!",
     data: result,
   });
 });
+
+const getProfile = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.getUserProfileFromDB(req.user);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Profile retrieved successfully!",
+      data: result,
+    });
+  }
+);
 
 export const UserControllers = {
   createAdmin,
   createVendor,
   createCustomer,
-  getProfile
+  getProfile,
 };

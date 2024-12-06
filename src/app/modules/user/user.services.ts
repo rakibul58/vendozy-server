@@ -52,7 +52,7 @@ const createVendorInDB = async (payload: TVendorPayload) => {
     role: UserRole.VENDOR,
   };
 
-  const vendorSignUp = await prisma.$transaction(async (transactionClient) => {
+  const result = await prisma.$transaction(async (transactionClient) => {
     const userInsertData = await transactionClient.user.create({
       data: userData,
     });
@@ -67,30 +67,7 @@ const createVendorInDB = async (payload: TVendorPayload) => {
     return createdVendorData;
   });
 
-  // generating access token and refresh token
-  const accessToken = jwtHelpers.generateToken(
-    {
-      email: vendorSignUp.email,
-      role: UserRole.VENDOR,
-    },
-    config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
-  );
-
-  const refreshToken = jwtHelpers.generateToken(
-    {
-      email: userData.email,
-      role: userData.role,
-    },
-    config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
-  );
-
-  return {
-    accessToken,
-    refreshToken,
-    needPasswordChange: false,
-  };
+  return result;
 };
 
 const createCustomerInDB = async (payload: TCustomerPayload) => {
@@ -105,7 +82,7 @@ const createCustomerInDB = async (payload: TCustomerPayload) => {
     role: UserRole.CUSTOMER,
   };
 
-  const customerSignup = await prisma.$transaction(
+  const result = await prisma.$transaction(
     async (transactionClient) => {
       const userInsertData = await transactionClient.user.create({
         data: userData,
@@ -122,30 +99,7 @@ const createCustomerInDB = async (payload: TCustomerPayload) => {
     }
   );
 
-  // generating access token and refresh token
-  const accessToken = jwtHelpers.generateToken(
-    {
-      email: customerSignup.email,
-      role: UserRole.CUSTOMER,
-    },
-    config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
-  );
-
-  const refreshToken = jwtHelpers.generateToken(
-    {
-      email: userData.email,
-      role: userData.role,
-    },
-    config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
-  );
-
-  return {
-    accessToken,
-    refreshToken,
-    needPasswordChange: false,
-  };
+  return result;
 };
 
 const getUserProfileFromDB = async (user: JwtPayload) => {

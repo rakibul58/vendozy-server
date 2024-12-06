@@ -18,6 +18,7 @@ router
 router
   .route("/create-vendor")
   .post(
+    auth(UserRole.ADMIN),
     validateRequest(UserValidations.createVendorValidationSchema),
     UserControllers.createVendor
   );
@@ -25,6 +26,7 @@ router
 router
   .route("/create-customer")
   .post(
+    auth(UserRole.ADMIN),
     validateRequest(UserValidations.createCustomerValidationSchema),
     UserControllers.createCustomer
   );
