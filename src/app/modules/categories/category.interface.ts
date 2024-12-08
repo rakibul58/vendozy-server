@@ -1,6 +1,7 @@
 export type TCategoryPayload = {
   name: string;
   description?: string;
+  image: string
 };
 
 export type TCategoryFilterRequest = {
