@@ -11,11 +11,11 @@ const vendorOnboardingInDB = async (
       where: {
         email: user.email,
       },
-      data: payload.vendor,
+      data: {...payload.vendor, isOnboarded: true},
     });
 
-    await transactionClient.product.createMany({
-      data: payload.products,
+    await transactionClient.product.create({
+      data: payload.product,
     });
 
     return vendorUpdate;

@@ -20,10 +20,10 @@ const vendorOnboardingInDB = (user, payload) => __awaiter(void 0, void 0, void 0
             where: {
                 email: user.email,
             },
-            data: payload.vendor,
+            data: Object.assign(Object.assign({}, payload.vendor), { isOnboarded: true }),
         });
-        yield transactionClient.product.createMany({
-            data: payload.products,
+        yield transactionClient.product.create({
+            data: payload.product,
         });
         return vendorUpdate;
     }));

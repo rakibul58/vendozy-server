@@ -4,7 +4,7 @@ export type TVendorOnboardingPayload = {
     logo?: string;
     description?: string;
   };
-  products: {
+  product: {
     name: string;
     description: string;
     price: number;
@@ -15,5 +15,5 @@ export type TVendorOnboardingPayload = {
     discount?: number | null;
     isFlashSale?: boolean;
     averageRating?: number;
-  }[];
+  };
 };
