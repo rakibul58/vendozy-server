@@ -8,4 +8,6 @@ exports.productFilterableFields = [
     "category",
     "vendor",
     "isFlashSale",
+    "maxPrice",
+    "minPrice"
 ];

@@ -41,7 +41,7 @@ const createProductInDB = (payload) => __awaiter(void 0, void 0, void 0, functio
 const getAllProductFromDB = (filters, options, userId // Optional user ID
 ) => __awaiter(void 0, void 0, void 0, function* () {
     const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
-    const { searchTerm, category, vendor, isFlashSale } = filters, filterData = __rest(filters, ["searchTerm", "category", "vendor", "isFlashSale"]);
+    const { searchTerm, category, vendor, isFlashSale, minPrice, maxPrice } = filters, filterData = __rest(filters, ["searchTerm", "category", "vendor", "isFlashSale", "minPrice", "maxPrice"]);
     // Array to store all conditions
     const andConditions = [];
     // Add search term condition
@@ -80,6 +80,21 @@ const getAllProductFromDB = (filters, options, userId // Optional user ID
     if (isFlashSale) {
         andConditions.push({
             isFlashSale: isFlashSale === "true",
+        });
+    }
+    // Add minPrice and maxPrice filters
+    if (minPrice !== undefined) {
+        andConditions.push({
+            price: {
+                gte: parseFloat(minPrice), // Ensure it's a number
+            },
+        });
+    }
+    if (maxPrice !== undefined) {
+        andConditions.push({
+            price: {
+                lte: parseFloat(maxPrice), // Ensure it's a number
+            },
         });
     }
     // Add additional filter conditions

@@ -85,7 +85,7 @@ model Product {
   vendorId       String
   images         String[]
   inventoryCount Int
-  discount       Decimal?  @db.Decimal(5, 2)
+  discount       Decimal?  @db.Decimal(5, 2) @default(0.00)
   isFlashSale    Boolean   @default(false)
   averageRating  Float     @default(0.0)
 

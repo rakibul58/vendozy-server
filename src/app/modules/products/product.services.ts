@@ -25,7 +25,15 @@ const getAllProductFromDB = async (
   userId?: string // Optional user ID
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
-  const { searchTerm, category, vendor, isFlashSale, ...filterData } = filters;
+  const {
+    searchTerm,
+    category,
+    vendor,
+    isFlashSale,
+    minPrice,
+    maxPrice,
+    ...filterData
+  } = filters;
 
   // Array to store all conditions
   const andConditions: Prisma.ProductWhereInput[] = [];
@@ -69,6 +77,23 @@ const getAllProductFromDB = async (
   if (isFlashSale) {
     andConditions.push({
       isFlashSale: isFlashSale === "true",
+    });
+  }
+
+  // Add minPrice and maxPrice filters
+  if (minPrice !== undefined) {
+    andConditions.push({
+      price: {
+        gte: parseFloat(minPrice), // Ensure it's a number
+      },
+    });
+  }
+
+  if (maxPrice !== undefined) {
+    andConditions.push({
+      price: {
+        lte: parseFloat(maxPrice), // Ensure it's a number
+      },
     });
   }
 

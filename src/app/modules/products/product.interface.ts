@@ -4,4 +4,6 @@ export type TProductFilterRequest = {
   category?: string | undefined;
   vendor?: string | undefined;
   isFlashSale?: string | undefined;
+  maxPrice?: string | undefined;
+  minPrice?: string | undefined;
 };
