@@ -16,4 +16,5 @@ router
     .route("/")
     .get(optionalAuth_1.optionalAuth, product_controllers_1.ProductControllers.getAllProduct)
     .post((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.VENDOR), (0, validateRequest_1.default)(product_validations_1.ProductValidations.createProductValidationSchema), product_controllers_1.ProductControllers.createProduct);
+router.route("/:id").get(optionalAuth_1.optionalAuth, product_controllers_1.ProductControllers.getProductById);
 exports.ProductRoutes = router;

@@ -24,6 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductServices = void 0;
+const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const product_constants_1 = require("./product.constants");
@@ -38,8 +39,7 @@ const createProductInDB = (payload) => __awaiter(void 0, void 0, void 0, functio
     });
     return result;
 });
-const getAllProductFromDB = (filters, options, userId // Optional user ID
-) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0, void 0, function* () {
     const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm, category, vendor, isFlashSale, minPrice, maxPrice } = filters, filterData = __rest(filters, ["searchTerm", "category", "vendor", "isFlashSale", "minPrice", "maxPrice"]);
     // Array to store all conditions
@@ -115,9 +115,9 @@ const getAllProductFromDB = (filters, options, userId // Optional user ID
     });
     // Fetch followed shop IDs if user is logged in and a customer
     let followedShopIds = [];
-    if (userId) {
+    if ((user === null || user === void 0 ? void 0 : user.email) && (user === null || user === void 0 ? void 0 : user.role) === client_1.UserRole.CUSTOMER) {
         const customer = yield prisma_1.default.customer.findUnique({
-            where: { userId },
+            where: { email: user === null || user === void 0 ? void 0 : user.email },
             include: {
                 shopsFollowed: {
                     select: {
@@ -220,7 +220,55 @@ const getAllProductFromDB = (filters, options, userId // Optional user ID
         data: result,
     };
 });
+const getProductByIdFromDB = (user, id) => __awaiter(void 0, void 0, void 0, function* () {
+    // Fetch product details
+    const product = yield prisma_1.default.product.findUniqueOrThrow({
+        where: { id },
+        include: {
+            category: true,
+            vendor: true,
+            Review: {
+                include: {
+                    customer: true,
+                    replies: true,
+                },
+                take: 5,
+            },
+        },
+    });
+    if ((user === null || user === void 0 ? void 0 : user.role) == client_1.UserRole.CUSTOMER && (user === null || user === void 0 ? void 0 : user.email)) {
+        const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+            where: { email: user === null || user === void 0 ? void 0 : user.email },
+        });
+        yield prisma_1.default.recentView.upsert({
+            where: {
+                customerId_productId: {
+                    customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                    productId: id,
+                },
+            },
+            update: {
+                viewedAt: new Date(),
+            },
+            create: {
+                customerId: customer.id,
+                productId: id,
+            },
+        });
+    }
+    // Fetch related products in the same category
+    const relatedProducts = yield prisma_1.default.product.findMany({
+        where: {
+            categoryId: product.categoryId,
+            id: { not: id },
+            isDeleted: false,
+        },
+        take: 4,
+    });
+    return { product, relatedProducts };
+});
 exports.ProductServices = {
     createProductInDB,
     getAllProductFromDB,
+    getProductByIdFromDB
 };

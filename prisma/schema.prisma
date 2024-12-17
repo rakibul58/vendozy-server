@@ -55,6 +55,10 @@ model Vendor {
   products      Product[]
   shopFollowers ShopFollower[]
   isOnboarded   Boolean        @default(false)
+  Review        Review[]
+  ReviewReply   ReviewReply[]
+  Cart          Cart[]
+  Order         Order[]
 
   @@map("vendors")
 }
@@ -70,6 +74,10 @@ model Customer {
   profileImg    String?
   isDeleted     Boolean        @default(false)
   shopsFollowed ShopFollower[]
+  Review        Review[]
+  Cart          Cart[]
+  Order         Order[]
+  RecentView    RecentView[]
 
   @@map("customers")
 }
@@ -85,13 +93,17 @@ model Product {
   vendorId       String
   images         String[]
   inventoryCount Int
-  discount       Decimal?  @db.Decimal(5, 2) @default(0.00)
+  discount       Decimal?  @default(0.00) @db.Decimal(5, 2)
   isFlashSale    Boolean   @default(false)
   averageRating  Float     @default(0.0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  isDeleted  Boolean      @default(false)
+  Review     Review[]
+  CartItem   CartItem[]
+  OrderItem  OrderItem[]
+  RecentView RecentView[]
 
   @@map("products")
 }
@@ -122,6 +134,134 @@ model ShopFollower {
   @@map("shop_followers")
 }
 
+// Review System
+model Review {
+  id         String        @id @default(uuid())
+  customerId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  productId  String
+  product    Product       @relation(fields: [productId], references: [id])
+  vendorId   String
+  vendor     Vendor        @relation(fields: [vendorId], references: [id])
+  rating     Int
+  comment    String?
+  replies    ReviewReply[]
+  createdAt  DateTime      @default(now())
+
+  @@unique([customerId, productId])
+  @@map("reviews")
+}
+
+model ReviewReply {
+  id        String   @id @default(uuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id])
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@map("review_replies")
+}
+
+// Cart System
+model Cart {
+  id         String     @id @default(uuid())
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  vendorId   String
+  vendor     Vendor     @relation(fields: [vendorId], references: [id])
+  items      CartItem[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([customerId, vendorId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+
+  @@map("cart_items")
+}
+
+// Order Management
+model Order {
+  id          String      @id @default(uuid())
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  vendorId    String
+  vendor      Vendor      @relation(fields: [vendorId], references: [id])
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+  couponCode  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  Payment     Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  discount  Decimal? @db.Decimal(5, 2)
+
+  @@map("order_items")
+}
+
+// Recent Views Tracking
+model RecentView {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  viewedAt   DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@map("recent_views")
+}
+
+// Coupon Management
+model Coupon {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  description   String?
+  discountType  DiscountType
+  discountValue Decimal      @db.Decimal(10, 2)
+  startDate     DateTime
+  endDate       DateTime
+  minPurchase   Decimal?     @db.Decimal(10, 2)
+  isActive      Boolean      @default(true)
+
+  @@map("coupons")
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  transactionId String
+  amount        Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("payments")
+}
+
 enum UserRole {
   ADMIN
   VENDOR
@@ -138,4 +278,15 @@ enum ShopStatus {
   DELETED
   BLACKLISTED
   ACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
 }

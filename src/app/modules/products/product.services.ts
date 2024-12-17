@@ -1,4 +1,4 @@
-import { Prisma, Product } from "@prisma/client";
+import { Prisma, Product, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import { TProductFilterRequest } from "./product.interface";
 import { IPaginationOptions } from "../../interfaces/pagination";
@@ -22,7 +22,7 @@ const createProductInDB = async (payload: Product): Promise<Product> => {
 const getAllProductFromDB = async (
   filters: TProductFilterRequest,
   options: IPaginationOptions,
-  userId?: string // Optional user ID
+  user?: JwtPayload
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const {
@@ -117,9 +117,9 @@ const getAllProductFromDB = async (
 
   // Fetch followed shop IDs if user is logged in and a customer
   let followedShopIds: string[] = [];
-  if (userId) {
+  if (user?.email && user?.role === UserRole.CUSTOMER) {
     const customer = await prisma.customer.findUnique({
-      where: { userId },
+      where: { email: user?.email },
       include: {
         shopsFollowed: {
           select: {
@@ -243,7 +243,59 @@ const getAllProductFromDB = async (
   };
 };
 
+const getProductByIdFromDB = async (user: JwtPayload, id: string) => {
+  // Fetch product details
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id },
+    include: {
+      category: true,
+      vendor: true,
+      Review: {
+        include: {
+          customer: true,
+          replies: true,
+        },
+        take: 5,
+      },
+    },
+  });
+
+  if (user?.role == UserRole.CUSTOMER && user?.email) {
+    const customer = await prisma.customer.findUniqueOrThrow({
+      where: { email: user?.email },
+    });
+    await prisma.recentView.upsert({
+      where: {
+        customerId_productId: {
+          customerId: customer?.id,
+          productId: id,
+        },
+      },
+      update: {
+        viewedAt: new Date(),
+      },
+      create: {
+        customerId: customer.id,
+        productId: id,
+      },
+    });
+  }
+
+  // Fetch related products in the same category
+  const relatedProducts = await prisma.product.findMany({
+    where: {
+      categoryId: product.categoryId,
+      id: { not: id },
+      isDeleted: false,
+    },
+    take: 4,
+  });
+
+  return { product, relatedProducts };
+};
+
 export const ProductServices = {
   createProductInDB,
   getAllProductFromDB,
+  getProductByIdFromDB
 };

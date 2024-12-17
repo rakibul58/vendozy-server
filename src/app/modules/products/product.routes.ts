@@ -17,4 +17,6 @@ router
     ProductControllers.createProduct
   );
 
+router.route("/:id").get(optionalAuth, ProductControllers.getProductById);
+
 export const ProductRoutes = router;

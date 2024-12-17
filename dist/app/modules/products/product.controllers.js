@@ -29,10 +29,9 @@ const createProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const getAllProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     const filters = (0, pick_1.default)(req.query, product_constants_1.productFilterableFields);
     const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
-    const result = yield product_services_1.ProductServices.getAllProductFromDB(filters, options, (_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+    const result = yield product_services_1.ProductServices.getAllProductFromDB(filters, options, req.user);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
@@ -41,7 +40,17 @@ const getAllProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         data: result.data,
     });
 }));
+const getProductById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield product_services_1.ProductServices.getProductByIdFromDB(req.user, req.params.id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Product retrieved successfully",
+        data: result,
+    });
+}));
 exports.ProductControllers = {
     createProduct,
     getAllProduct,
+    getProductById,
 };

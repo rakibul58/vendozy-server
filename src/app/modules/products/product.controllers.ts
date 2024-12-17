@@ -25,7 +25,7 @@ const getAllProduct = catchAsync(
     const result = await ProductServices.getAllProductFromDB(
       filters,
       options,
-      req.user?.id
+      req.user
     );
 
     sendResponse(res, {
@@ -38,7 +38,24 @@ const getAllProduct = catchAsync(
   }
 );
 
+const getProductById = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await ProductServices.getProductByIdFromDB(
+      req.user,
+      req.params.id
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Product retrieved successfully",
+      data: result,
+    });
+  }
+);
+
 export const ProductControllers = {
   createProduct,
   getAllProduct,
+  getProductById,
 };
