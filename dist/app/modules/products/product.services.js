@@ -221,6 +221,7 @@ const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0
     };
 });
 const getProductByIdFromDB = (user, id) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     // Fetch product details
     const product = yield prisma_1.default.product.findUniqueOrThrow({
         where: { id },
@@ -264,11 +265,14 @@ const getProductByIdFromDB = (user, id) => __awaiter(void 0, void 0, void 0, fun
             isDeleted: false,
         },
         take: 4,
+        include: {
+            vendor: true,
+        },
     });
-    return { product, relatedProducts };
+    return { product, relatedProducts, reviewCount: (_a = product === null || product === void 0 ? void 0 : product.Review) === null || _a === void 0 ? void 0 : _a.length };
 });
 exports.ProductServices = {
     createProductInDB,
     getAllProductFromDB,
-    getProductByIdFromDB
+    getProductByIdFromDB,
 };

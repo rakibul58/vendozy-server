@@ -289,13 +289,16 @@ const getProductByIdFromDB = async (user: JwtPayload, id: string) => {
       isDeleted: false,
     },
     take: 4,
+    include: {
+      vendor: true,
+    },
   });
 
-  return { product, relatedProducts };
+  return { product, relatedProducts, reviewCount: product?.Review?.length };
 };
 
 export const ProductServices = {
   createProductInDB,
   getAllProductFromDB,
-  getProductByIdFromDB
+  getProductByIdFromDB,
 };
