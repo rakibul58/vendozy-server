@@ -15,4 +15,14 @@ router
     VendorControllers.vendorOnboarding
   );
 
+router
+  .route("/:id/follow")
+  .post(auth(UserRole.CUSTOMER), VendorControllers.followVendorShop);
+
+router
+  .route("/:id/follow-status")
+  .get(auth(UserRole.CUSTOMER), VendorControllers.getFollowStatus);
+
+router.route("/:id").get(VendorControllers.getVendorShop);
+
 export const VendorRoutes = router;

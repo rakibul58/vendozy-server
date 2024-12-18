@@ -29,6 +29,74 @@ const vendorOnboardingInDB = (user, payload) => __awaiter(void 0, void 0, void 0
     }));
     return result;
 });
+const getVendorShopFromDB = (vendorId) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
+        where: { id: vendorId },
+        include: {
+            _count: {
+                select: { shopFollowers: true },
+            },
+        },
+    });
+    return Object.assign(Object.assign({}, vendor), { followerCount: vendor._count.shopFollowers });
+});
+const followShopsInDB = (user, vendorId) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    // Check if already following
+    const existingFollow = yield prisma_1.default.shopFollower.findUnique({
+        where: {
+            customerId_vendorId: {
+                customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                vendorId,
+            },
+        },
+    });
+    if (existingFollow) {
+        // Unfollow
+        const result = yield prisma_1.default.shopFollower.delete({
+            where: {
+                customerId_vendorId: {
+                    customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                    vendorId,
+                },
+            },
+        });
+        return result;
+    }
+    else {
+        // Follow
+        const result = yield prisma_1.default.shopFollower.create({
+            data: {
+                customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                vendorId,
+            },
+        });
+        return result;
+    }
+});
+const getFollowStatusFromDB = (user, vendorId) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const followStatus = yield prisma_1.default.shopFollower.findUnique({
+        where: {
+            customerId_vendorId: {
+                customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                vendorId,
+            },
+        },
+    });
+    return { isFollowing: !!followStatus };
+});
 exports.VendorServices = {
     vendorOnboardingInDB,
+    getVendorShopFromDB,
+    followShopsInDB,
+    getFollowStatusFromDB,
 };

@@ -26,6 +26,36 @@ const vendorOnboarding = (0, catchAsync_1.default)((req, res) => __awaiter(void 
         data: result,
     });
 }));
+const getVendorShop = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield vendor_services_1.VendorServices.getVendorShopFromDB(req.params.id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Vendor Retrieved successfully!",
+        data: result,
+    });
+}));
+const followVendorShop = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield vendor_services_1.VendorServices.followShopsInDB(req === null || req === void 0 ? void 0 : req.user, req.params.id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Vendor Follow Status updated!",
+        data: result,
+    });
+}));
+const getFollowStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield vendor_services_1.VendorServices.getFollowStatusFromDB(req === null || req === void 0 ? void 0 : req.user, req.params.id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Follow Status Fetched!",
+        data: result,
+    });
+}));
 exports.VendorControllers = {
     vendorOnboarding,
+    getVendorShop,
+    followVendorShop,
+    getFollowStatus,
 };
