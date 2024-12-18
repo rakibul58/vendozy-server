@@ -271,8 +271,27 @@ const getProductByIdFromDB = (user, id) => __awaiter(void 0, void 0, void 0, fun
     });
     return { product, relatedProducts, reviewCount: (_a = product === null || product === void 0 ? void 0 : product.Review) === null || _a === void 0 ? void 0 : _a.length };
 });
+const getRecentViewProductsFromDB = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+        where: { email: user === null || user === void 0 ? void 0 : user.email },
+    });
+    const result = yield prisma_1.default.recentView.findMany({
+        where: { customerId: customer === null || customer === void 0 ? void 0 : customer.id },
+        include: {
+            product: {
+                include: {
+                    vendor: true,
+                },
+            },
+        },
+        orderBy: { viewedAt: "desc" },
+        take: 10,
+    });
+    return result;
+});
 exports.ProductServices = {
     createProductInDB,
     getAllProductFromDB,
     getProductByIdFromDB,
+    getRecentViewProductsFromDB,
 };

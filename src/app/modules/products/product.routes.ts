@@ -17,6 +17,9 @@ router
     ProductControllers.createProduct
   );
 
+router
+  .route("/recent-view")
+  .get(auth(UserRole.CUSTOMER), ProductControllers.getRecentViewProducts);
 router.route("/:id").get(optionalAuth, ProductControllers.getProductById);
 
 export const ProductRoutes = router;

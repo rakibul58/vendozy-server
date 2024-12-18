@@ -49,8 +49,18 @@ const getProductById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         data: result,
     });
 }));
+const getRecentViewProducts = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield product_services_1.ProductServices.getRecentViewProductsFromDB(req.user);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Products retrieved successfully",
+        data: result,
+    });
+}));
 exports.ProductControllers = {
     createProduct,
     getAllProduct,
     getProductById,
+    getRecentViewProducts,
 };

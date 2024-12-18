@@ -297,8 +297,29 @@ const getProductByIdFromDB = async (user: JwtPayload, id: string) => {
   return { product, relatedProducts, reviewCount: product?.Review?.length };
 };
 
+const getRecentViewProductsFromDB = async (user: JwtPayload) => {
+  const customer = await prisma.customer.findUniqueOrThrow({
+    where: { email: user?.email },
+  });
+  const result = await prisma.recentView.findMany({
+    where: { customerId: customer?.id },
+    include: {
+      product: {
+        include: {
+          vendor: true,
+        },
+      },
+    },
+    orderBy: { viewedAt: "desc" },
+    take: 10,
+  });
+
+  return result;
+};
+
 export const ProductServices = {
   createProductInDB,
   getAllProductFromDB,
   getProductByIdFromDB,
+  getRecentViewProductsFromDB,
 };

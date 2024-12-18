@@ -54,8 +54,22 @@ const getProductById = catchAsync(
   }
 );
 
+const getRecentViewProducts = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await ProductServices.getRecentViewProductsFromDB(req.user);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Products retrieved successfully",
+      data: result,
+    });
+  }
+);
+
 export const ProductControllers = {
   createProduct,
   getAllProduct,
   getProductById,
+  getRecentViewProducts,
 };
