@@ -34,9 +34,14 @@ const getVendorShopFromDB = async (vendorId: string) => {
     },
   });
 
+  const productCount = await prisma.product.count({
+    where: { vendorId: vendorId },
+  });
+
   return {
     ...vendor,
     followerCount: vendor._count.shopFollowers,
+    productCount,
   };
 };
 

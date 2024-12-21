@@ -38,7 +38,10 @@ const getVendorShopFromDB = (vendorId) => __awaiter(void 0, void 0, void 0, func
             },
         },
     });
-    return Object.assign(Object.assign({}, vendor), { followerCount: vendor._count.shopFollowers });
+    const productCount = yield prisma_1.default.product.count({
+        where: { vendorId: vendorId },
+    });
+    return Object.assign(Object.assign({}, vendor), { followerCount: vendor._count.shopFollowers, productCount });
 });
 const followShopsInDB = (user, vendorId) => __awaiter(void 0, void 0, void 0, function* () {
     const customer = yield prisma_1.default.customer.findUniqueOrThrow({

@@ -86,14 +86,14 @@ const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0
     if (minPrice !== undefined) {
         andConditions.push({
             price: {
-                gte: parseFloat(minPrice), // Ensure it's a number
+                gte: parseFloat(minPrice),
             },
         });
     }
     if (maxPrice !== undefined) {
         andConditions.push({
             price: {
-                lte: parseFloat(maxPrice), // Ensure it's a number
+                lte: parseFloat(maxPrice),
             },
         });
     }
@@ -129,20 +129,34 @@ const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0
         followedShopIds =
             (customer === null || customer === void 0 ? void 0 : customer.shopsFollowed.map((shop) => shop.vendorId)) || [];
     }
-    // Prepare result and total
-    let result = [];
-    let total = 0;
     // Construct base where conditions
     const baseWhereInput = {
         AND: andConditions,
     };
-    // If user follows shops, first fetch their products
+    // Prepare result and total
+    let result = [];
+    let total = 0;
+    // If followed shops exist, prioritize their products
     if (followedShopIds.length > 0) {
+        // First, check total followed shop products matching filters
         const followedShopWhereInput = Object.assign(Object.assign({}, baseWhereInput), { vendor: {
                 id: {
                     in: followedShopIds,
                 },
             } });
+        const followedShopProductsCount = yield prisma_1.default.product.count({
+            where: followedShopWhereInput,
+        });
+        // Check other shop products matching filters
+        const otherShopWhereInput = Object.assign(Object.assign({}, baseWhereInput), { vendor: {
+                id: {
+                    notIn: followedShopIds,
+                },
+            } });
+        const otherShopProductsCount = yield prisma_1.default.product.count({
+            where: otherShopWhereInput,
+        });
+        total = followedShopProductsCount + otherShopProductsCount;
         // Fetch followed shop products
         const followedShopProducts = yield prisma_1.default.product.findMany({
             where: followedShopWhereInput,
@@ -156,21 +170,12 @@ const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0
                 vendor: true,
             },
         });
-        // Count followed shop products
-        const followedShopProductsCount = yield prisma_1.default.product.count({
-            where: followedShopWhereInput,
-        });
-        // If followed shop products are less than limit, fetch remaining from other shops
+        // If not enough products from followed shops, fetch from other shops
         if (followedShopProducts.length < limit) {
             const remainingLimit = limit - followedShopProducts.length;
-            const otherShopWhereInput = Object.assign(Object.assign({}, baseWhereInput), { vendor: {
-                    id: {
-                        notIn: followedShopIds,
-                    },
-                } });
             const otherShopProducts = yield prisma_1.default.product.findMany({
                 where: otherShopWhereInput,
-                skip,
+                skip: Math.max(0, skip - followedShopProductsCount),
                 take: remainingLimit,
                 orderBy: options.sortBy && options.sortOrder
                     ? { [options.sortBy]: options.sortOrder }
@@ -182,15 +187,9 @@ const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0
             });
             // Combine products
             result = [...followedShopProducts, ...otherShopProducts];
-            // Count total other shop products
-            const otherShopProductsCount = yield prisma_1.default.product.count({
-                where: otherShopWhereInput,
-            });
-            total = followedShopProductsCount + otherShopProductsCount;
         }
         else {
             result = followedShopProducts;
-            total = followedShopProductsCount;
         }
     }
     else {
