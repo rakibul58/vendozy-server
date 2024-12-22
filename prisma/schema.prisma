@@ -204,7 +204,6 @@ model Order {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
-  Payment     Payment[]
 
   @@map("orders")
 }
@@ -246,20 +245,10 @@ model Coupon {
   endDate       DateTime
   minPurchase   Decimal?     @db.Decimal(10, 2)
   isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@map("coupons")
-}
-
-model Payment {
-  id            String   @id @default(uuid())
-  orderId       String
-  order         Order    @relation(fields: [orderId], references: [id])
-  transactionId String
-  amount        Decimal  @db.Decimal(10, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@map("payments")
 }
 
 enum UserRole {
