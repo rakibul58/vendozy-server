@@ -11,7 +11,7 @@ const coupon_controllers_1 = require("./coupon.controllers");
 const router = (0, express_1.Router)();
 router
     .route("/")
-    .get(coupon_controllers_1.CouponControllers.createCoupon)
+    .get(coupon_controllers_1.CouponControllers.getAllCoupon)
     .post((0, auth_1.default)(client_1.UserRole.ADMIN), coupon_controllers_1.CouponControllers.createCoupon);
 router
     .route("/:id")

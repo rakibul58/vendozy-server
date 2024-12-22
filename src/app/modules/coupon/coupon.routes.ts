@@ -7,7 +7,7 @@ const router = Router();
 
 router
   .route("/")
-  .get(CouponControllers.createCoupon)
+  .get(CouponControllers.getAllCoupon)
   .post(auth(UserRole.ADMIN), CouponControllers.createCoupon);
 
 router
