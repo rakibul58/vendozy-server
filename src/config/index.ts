@@ -1,3 +1,4 @@
+import { sign } from "crypto";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -18,4 +19,8 @@ export default {
   reset_pass_link: process.env.RESET_PASS_LINK,
   sender_email: process.env.SENDER_EMAIL,
   sender_password: process.env.SENDER_APP_PASS,
+  backend_url: process.env.BACKEND_URL,
+  base_url: process.env.BASE_URL,
+  store_id: process.env.STORE_ID,
+  signature_key: process.env.SIGNATURE_KEY,
 };
