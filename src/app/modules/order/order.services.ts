@@ -17,42 +17,76 @@ import {
   VerifyCheckoutQuery,
 } from "./order.interface";
 
-const initiateCheckoutInDB = async (user: JwtPayload, input: CheckoutInput) => {
+const initiateCheckoutInDB = async (
+  user: JwtPayload,
+  input: CheckoutInput & { productId?: string; quantity?: number }
+) => {
   const customer = await prisma.customer.findUniqueOrThrow({
     where: { email: user?.email },
   });
-  // Find cart with all necessary relations
-  const cart = await prisma.cart.findFirst({
-    where: {
-      customerId: customer.id,
-    },
-    include: {
-      items: {
-        include: {
-          product: true,
-        },
-      },
-      customer: true,
-      vendor: true,
-    },
-  });
 
-  if (!cart || cart.items.length === 0) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Cart is empty");
-  }
+  let items;
+  let cartId = null;
 
-  // Validate product inventory
-  for (const item of cart.items) {
-    if (item.quantity > item.product.inventoryCount) {
+  // Handle single product checkout
+  if (input.productId && input.quantity) {
+    const product = await prisma.product.findUniqueOrThrow({
+      where: { id: input.productId },
+    });
+
+    // Validate inventory for single product
+    if (input.quantity > product.inventoryCount) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        `Insufficient inventory for product: ${item.product.name}`
+        `Insufficient inventory for product: ${product.name}`
       );
     }
+
+    items = [
+      {
+        product,
+        quantity: input.quantity,
+        price: product.price,
+      },
+    ];
+  }
+  // Handle cart checkout
+  else {
+    const cart = await prisma.cart.findFirst({
+      where: {
+        customerId: customer.id,
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        customer: true,
+        vendor: true,
+      },
+    });
+
+    if (!cart || cart.items.length === 0) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Cart is empty");
+    }
+
+    // Validate inventory for cart items
+    for (const item of cart.items) {
+      if (item.quantity > item.product.inventoryCount) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          `Insufficient inventory for product: ${item.product.name}`
+        );
+      }
+    }
+
+    items = cart.items;
+    cartId = cart.id;
   }
 
   // Calculate initial total price
-  let totalPrice = cart.items.reduce((sum, item) => {
+  let totalPrice = items.reduce((sum, item) => {
     const price = Number(item.price);
     const discount = Number(item.product.discount || 0);
     const discountedPrice = price - (price * discount) / 100;
@@ -77,18 +111,18 @@ const initiateCheckoutInDB = async (user: JwtPayload, input: CheckoutInput) => {
 
   const transactionId = generateTransactionId();
 
-  // Create order using transaction to ensure data consistency
+  // Create order using transaction
   const order = await prisma.$transaction(async (tx) => {
     const newOrder = await tx.order.create({
       data: {
-        customerId: cart.customerId,
-        vendorId: cart.vendorId,
+        customerId: customer.id,
+        vendorId: items[0].product.vendorId,
         totalAmount: totalPrice,
         status: "PENDING",
         couponCode: finalCouponCode,
         orderItems: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
+          create: items.map((item) => ({
+            productId: item.product.id,
             quantity: item.quantity,
             price: item.price,
             discount: item.product.discount,
@@ -104,14 +138,14 @@ const initiateCheckoutInDB = async (user: JwtPayload, input: CheckoutInput) => {
   const paymentData: PaymentData = {
     transactionId,
     totalPrice,
-    customerName: cart.customer.name,
-    customerEmail: cart.customer.email,
-    customerPhone: cart.customer.phone,
-    customerAddress: cart.customer.address,
+    customerName: customer.name,
+    customerEmail: customer.email,
+    customerPhone: customer.phone,
+    customerAddress: customer.address,
     orderId: order.id,
     couponCode: finalCouponCode as string,
     discountAmount,
-    cartId: cart.id,
+    cartId, // Will be null for single product checkout
   };
 
   // Initiate payment
@@ -136,7 +170,7 @@ const verifyCheckoutInDB = async (query: VerifyCheckoutQuery) => {
           },
         });
 
-        // Update product inventory for each item
+        // Update product inventory
         for (const item of order.orderItems) {
           await tx.product.update({
             where: { id: item.productId },
@@ -148,15 +182,16 @@ const verifyCheckoutInDB = async (query: VerifyCheckoutQuery) => {
           });
         }
 
-        // First delete all cart items
-        await tx.cartItem.deleteMany({
-          where: { cartId: query.cartId },
-        });
+        // Clear cart only if cartId is provided (cart checkout)
+        if (query.cartId!="null") {
+          await tx.cartItem.deleteMany({
+            where: { cartId: query.cartId },
+          });
 
-        // Then delete the cart
-        await tx.cart.delete({
-          where: { id: query.cartId },
-        });
+          await tx.cart.delete({
+            where: { id: query.cartId },
+          });
+        }
 
         filePath = join(__dirname, "../../views/checkout-success.html");
       } else {

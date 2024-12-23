@@ -12,7 +12,7 @@ export interface PaymentData {
   orderId: string;
   couponCode?: string;
   discountAmount?: number;
-  cartId: string;
+  cartId: string | null;
 }
 
 export interface VerifyCheckoutQuery {
