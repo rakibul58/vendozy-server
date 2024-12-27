@@ -4,6 +4,8 @@
 
 Vendozy Server is a backend server application designed to manage and support the Vendozy platform. It provides APIs and services to handle various functionalities required by the Vendozy application.
 
+[Live Server](https://vendozy-server.vercel.app/)
+
 ## Features
 
 - User authentication and authorization
@@ -26,7 +28,7 @@ To install and run the Vendozy Server locally, follow these steps:
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/vendozy-server.git
+git clone https://github.com/rakibul58/vendozy-server.git
 ```
 
 2. Navigate to the project directory:
