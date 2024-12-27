@@ -38,4 +38,21 @@ router
     UserControllers.getProfile
   );
 
+router
+  .route("/update-admin")
+  .put(auth(UserRole.ADMIN), UserControllers.updateAdminProfile);
+
+router
+  .route("/update-vendor")
+  .put(
+    auth(UserRole.VENDOR, UserRole.ADMIN),
+    UserControllers.updateVendorProfile
+  );
+router
+  .route("/update-customer")
+  .put(
+    auth(UserRole.CUSTOMER, UserRole.ADMIN),
+    UserControllers.updateCustomerProfile
+  );
+
 export const UserRoutes = router;

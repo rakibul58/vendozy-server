@@ -53,9 +53,39 @@ const getProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         data: result,
     });
 }));
+const updateAdminProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.updateAdminProfile(req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Profile updated successfully!",
+        data: result,
+    });
+}));
+const updateVendorProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.updateVendorProfile(req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Profile updated successfully!",
+        data: result,
+    });
+}));
+const updateCustomerProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.updateCustomerProfile(req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Profile updated successfully!",
+        data: result,
+    });
+}));
 exports.UserControllers = {
     createAdmin,
     createVendor,
     createCustomer,
     getProfile,
+    updateAdminProfile,
+    updateVendorProfile,
+    updateCustomerProfile
 };

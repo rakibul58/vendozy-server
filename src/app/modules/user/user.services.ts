@@ -82,22 +82,20 @@ const createCustomerInDB = async (payload: TCustomerPayload) => {
     role: UserRole.CUSTOMER,
   };
 
-  const result = await prisma.$transaction(
-    async (transactionClient) => {
-      const userInsertData = await transactionClient.user.create({
-        data: userData,
-      });
+  const result = await prisma.$transaction(async (transactionClient) => {
+    const userInsertData = await transactionClient.user.create({
+      data: userData,
+    });
 
-      const createdVendorData = await transactionClient.customer.create({
-        data: {
-          userId: userInsertData.id,
-          ...payload.customer,
-        },
-      });
+    const createdVendorData = await transactionClient.customer.create({
+      data: {
+        userId: userInsertData.id,
+        ...payload.customer,
+      },
+    });
 
-      return createdVendorData;
-    }
-  );
+    return createdVendorData;
+  });
 
   return result;
 };
@@ -123,9 +121,120 @@ const getUserProfileFromDB = async (user: JwtPayload) => {
     });
 };
 
+const updateAdminProfile = async (
+  user: JwtPayload,
+  payload: { name: string; phone: string }
+) => {
+  const admin = await prisma.admin.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+  const { name, phone } = payload;
+
+  const updatedAdmin = await prisma.admin.update({
+    where: { id: admin.id },
+    data: {
+      name,
+      phone,
+    },
+    include: {
+      user: {
+        select: {
+          email: true,
+          role: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  return updatedAdmin;
+};
+
+const updateVendorProfile = async (
+  user: JwtPayload,
+  payload: {
+    name?: string;
+    phone?: string;
+    logo?: string;
+    description?: string;
+  }
+) => {
+  const vendor = await prisma.vendor.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+  const { name, phone, logo, description } = payload;
+
+  const updatedVendor = await prisma.vendor.update({
+    where: { id: vendor.id },
+    data: {
+      name,
+      phone,
+      logo,
+      description,
+      isOnboarded: true,
+    },
+    include: {
+      user: {
+        select: {
+          email: true,
+          role: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  return updatedVendor;
+};
+
+const updateCustomerProfile = async (
+  user: JwtPayload,
+  payload: {
+    name?: string;
+    phone?: string;
+    address?: string;
+    profileImg?: string;
+  }
+) => {
+  const customer = await prisma.customer.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+  const { name, phone, address, profileImg } = payload;
+
+  const updatedCustomer = await prisma.customer.update({
+    where: { id: customer.id },
+    data: {
+      name,
+      phone,
+      address,
+      profileImg,
+    },
+    include: {
+      user: {
+        select: {
+          email: true,
+          role: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  return updatedCustomer;
+};
+
 export const UserServices = {
   createAdminInDb,
   createVendorInDB,
   createCustomerInDB,
   getUserProfileFromDB,
+  updateAdminProfile,
+  updateVendorProfile,
+  updateCustomerProfile,
 };

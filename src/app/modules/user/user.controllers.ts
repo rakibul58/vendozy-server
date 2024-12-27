@@ -49,9 +49,48 @@ const getProfile = catchAsync(
   }
 );
 
+const updateAdminProfile = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.updateAdminProfile(req.user, req.body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Profile updated successfully!",
+      data: result,
+    });
+  }
+);
+
+const updateVendorProfile = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.updateVendorProfile(req.user, req.body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Profile updated successfully!",
+      data: result,
+    });
+  }
+);
+
+const updateCustomerProfile = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.updateCustomerProfile(req.user, req.body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Profile updated successfully!",
+      data: result,
+    });
+  }
+);
+
 export const UserControllers = {
   createAdmin,
   createVendor,
   createCustomer,
   getProfile,
+  updateAdminProfile,
+  updateVendorProfile,
+  updateCustomerProfile
 };

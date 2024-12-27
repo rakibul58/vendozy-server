@@ -23,4 +23,13 @@ router
 router
     .route("/me")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.VENDOR, client_1.UserRole.CUSTOMER), user_controllers_1.UserControllers.getProfile);
+router
+    .route("/update-admin")
+    .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateAdminProfile);
+router
+    .route("/update-vendor")
+    .put((0, auth_1.default)(client_1.UserRole.VENDOR, client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateVendorProfile);
+router
+    .route("/update-customer")
+    .put((0, auth_1.default)(client_1.UserRole.CUSTOMER, client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateCustomerProfile);
 exports.UserRoutes = router;

@@ -126,9 +126,92 @@ const getUserProfileFromDB = (user) => __awaiter(void 0, void 0, void 0, functio
             },
         });
 });
+const updateAdminProfile = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const admin = yield prisma_1.default.admin.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { name, phone } = payload;
+    const updatedAdmin = yield prisma_1.default.admin.update({
+        where: { id: admin.id },
+        data: {
+            name,
+            phone,
+        },
+        include: {
+            user: {
+                select: {
+                    email: true,
+                    role: true,
+                    status: true,
+                },
+            },
+        },
+    });
+    return updatedAdmin;
+});
+const updateVendorProfile = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { name, phone, logo, description } = payload;
+    const updatedVendor = yield prisma_1.default.vendor.update({
+        where: { id: vendor.id },
+        data: {
+            name,
+            phone,
+            logo,
+            description,
+            isOnboarded: true,
+        },
+        include: {
+            user: {
+                select: {
+                    email: true,
+                    role: true,
+                    status: true,
+                },
+            },
+        },
+    });
+    return updatedVendor;
+});
+const updateCustomerProfile = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { name, phone, address, profileImg } = payload;
+    const updatedCustomer = yield prisma_1.default.customer.update({
+        where: { id: customer.id },
+        data: {
+            name,
+            phone,
+            address,
+            profileImg,
+        },
+        include: {
+            user: {
+                select: {
+                    email: true,
+                    role: true,
+                    status: true,
+                },
+            },
+        },
+    });
+    return updatedCustomer;
+});
 exports.UserServices = {
     createAdminInDb,
     createVendorInDB,
     createCustomerInDB,
     getUserProfileFromDB,
+    updateAdminProfile,
+    updateVendorProfile,
+    updateCustomerProfile,
 };
