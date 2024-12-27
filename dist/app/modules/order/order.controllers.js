@@ -42,8 +42,64 @@ const getCustomerOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result.data,
     });
 }));
+const getAdminOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield order_services_1.OrderServices.getAdminOrdersFromDB(req === null || req === void 0 ? void 0 : req.user, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Orders retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+const addReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield order_services_1.OrderServices.addReviewsInDB(req === null || req === void 0 ? void 0 : req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Review added successfully",
+        data: result,
+    });
+}));
+const addReply = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield order_services_1.OrderServices.addReviewReplyInDB(req === null || req === void 0 ? void 0 : req.user, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Reply added successfully",
+        data: result,
+    });
+}));
+const getVendorReviews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield order_services_1.OrderServices.getVendorReviews(req === null || req === void 0 ? void 0 : req.user, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Reviews retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+const getAdminReviews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield order_services_1.OrderServices.getAdminReviews(req === null || req === void 0 ? void 0 : req.user, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Reviews retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
 exports.OrderControllers = {
     initiatePayment,
     verifyPayment,
     getCustomerOrders,
+    addReview,
+    addReply,
+    getVendorReviews,
+    getAdminReviews,
+    getAdminOrders
 };

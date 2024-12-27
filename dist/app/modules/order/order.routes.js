@@ -16,4 +16,19 @@ router.route("/verify-payment").post(order_controllers_1.OrderControllers.verify
 router
     .route("/customer-orders")
     .get((0, auth_1.default)(client_1.UserRole.CUSTOMER), order_controllers_1.OrderControllers.getCustomerOrders);
+router
+    .route("/admin-orders")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN), order_controllers_1.OrderControllers.getAdminOrders);
+router
+    .route("/add-review")
+    .post((0, auth_1.default)(client_1.UserRole.CUSTOMER), order_controllers_1.OrderControllers.addReview);
+router
+    .route("/add-reply")
+    .post((0, auth_1.default)(client_1.UserRole.VENDOR), order_controllers_1.OrderControllers.addReply);
+router
+    .route("/vendor-reviews")
+    .get((0, auth_1.default)(client_1.UserRole.VENDOR), order_controllers_1.OrderControllers.getVendorReviews);
+router
+    .route("/admin-reviews")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN), order_controllers_1.OrderControllers.getAdminReviews);
 exports.OrderRoutes = router;

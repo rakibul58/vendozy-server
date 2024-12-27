@@ -287,7 +287,7 @@ const getCustomerOrdersFromDB = async (
         },
       },
       orderBy: {
-        order: {createdAt: 'desc'}
+        order: { createdAt: "desc" },
       },
     }),
     prisma.orderItem.count({
@@ -309,8 +309,260 @@ const getCustomerOrdersFromDB = async (
   };
 };
 
+const getAdminOrdersFromDB = async (
+  user: JwtPayload,
+  options: IPaginationOptions
+) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const orders = await prisma.order.findMany({
+    where: {},
+    skip,
+    take: limit,
+    include: {
+      customer: true,
+      vendor: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const total = await prisma.order.count({
+    where: {},
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: orders,
+  };
+};
+
+interface AddReviewPayload {
+  productId: string;
+  rating: number;
+  comment: string;
+}
+
+const addReviewsInDB = async (user: JwtPayload, payload: AddReviewPayload) => {
+  const customer = await prisma.customer.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  const review = await prisma.$transaction(async (tx) => {
+    // Get product and vendor info
+    const product = await tx.product.findUniqueOrThrow({
+      where: { id: payload?.productId },
+      select: { vendorId: true },
+    });
+
+    // Create review
+    const newReview = await tx.review.create({
+      data: {
+        customer: { connect: { id: customer.id } },
+        product: { connect: { id: payload.productId } },
+        vendor: { connect: { id: product.vendorId } },
+        rating: payload.rating,
+        comment: payload.comment,
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        customer: {
+          select: {
+            name: true,
+            profileImg: true,
+          },
+        },
+      },
+    });
+
+    // Update product average rating using aggregation
+    const {
+      _avg: { rating: newAverage },
+    } = await tx.review.aggregate({
+      where: { productId: payload.productId },
+      _avg: { rating: true },
+    });
+
+    await tx.product.update({
+      where: { id: payload.productId },
+      data: { averageRating: newAverage as number },
+    });
+
+    return newReview;
+  });
+
+  return review;
+};
+
+interface AddReviewReplyPayload {
+  reviewId: string;
+  comment: string;
+}
+
+const addReviewReplyInDB = async (
+  user: JwtPayload,
+  payload: AddReviewReplyPayload
+) => {
+  const vendor = await prisma.vendor.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  const reply = await prisma.reviewReply.create({
+    data: {
+      review: { connect: { id: payload.reviewId } },
+      vendor: { connect: { id: vendor.id } },
+      comment: payload.comment,
+    },
+    select: {
+      id: true,
+      comment: true,
+      createdAt: true,
+      vendor: {
+        select: {
+          name: true,
+          logo: true,
+        },
+      },
+    },
+  });
+
+  return reply;
+};
+
+const getVendorReviews = async (
+  user: JwtPayload,
+  options: IPaginationOptions
+) => {
+  const vendor = await prisma.vendor.findFirstOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const reviews = await prisma.review.findMany({
+    where: {
+      vendorId: vendor.id,
+    },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      customer: {
+        select: {
+          name: true,
+          profileImg: true,
+        },
+      },
+      product: {
+        select: {
+          name: true,
+          images: true,
+        },
+      },
+      replies: {
+        select: {
+          id: true,
+          comment: true,
+          createdAt: true,
+        },
+        take: 1,
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const total = await prisma.review.count({
+    where: {
+      vendorId: vendor.id,
+    },
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: reviews,
+  };
+};
+
+const getAdminReviews = async (
+  user: JwtPayload,
+  options: IPaginationOptions
+) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const reviews = await prisma.review.findMany({
+    where: {},
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      customer: {
+        select: {
+          name: true,
+          profileImg: true,
+        },
+      },
+      product: {
+        select: {
+          name: true,
+          images: true,
+        },
+      },
+      replies: {
+        select: {
+          id: true,
+          comment: true,
+          createdAt: true,
+        },
+        take: 1,
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const total = await prisma.review.count({
+    where: {},
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: reviews,
+  };
+};
+
 export const OrderServices = {
   initiateCheckoutInDB,
   verifyCheckoutInDB,
   getCustomerOrdersFromDB,
+  addReviewsInDB,
+  addReviewReplyInDB,
+  getVendorReviews,
+  getAdminReviews,
+  getAdminOrdersFromDB,
 };

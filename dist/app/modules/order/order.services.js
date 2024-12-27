@@ -245,7 +245,7 @@ const getCustomerOrdersFromDB = (user, options) => __awaiter(void 0, void 0, voi
                 },
             },
             orderBy: {
-                order: { createdAt: 'desc' }
+                order: { createdAt: "desc" },
             },
         }),
         prisma_1.default.orderItem.count({
@@ -265,8 +265,213 @@ const getCustomerOrdersFromDB = (user, options) => __awaiter(void 0, void 0, voi
         data: orders,
     };
 });
+const getAdminOrdersFromDB = (user, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const orders = yield prisma_1.default.order.findMany({
+        where: {},
+        skip,
+        take: limit,
+        include: {
+            customer: true,
+            vendor: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    const total = yield prisma_1.default.order.count({
+        where: {},
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: orders,
+    };
+});
+const addReviewsInDB = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const review = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        // Get product and vendor info
+        const product = yield tx.product.findUniqueOrThrow({
+            where: { id: payload === null || payload === void 0 ? void 0 : payload.productId },
+            select: { vendorId: true },
+        });
+        // Create review
+        const newReview = yield tx.review.create({
+            data: {
+                customer: { connect: { id: customer.id } },
+                product: { connect: { id: payload.productId } },
+                vendor: { connect: { id: product.vendorId } },
+                rating: payload.rating,
+                comment: payload.comment,
+            },
+            select: {
+                id: true,
+                rating: true,
+                comment: true,
+                createdAt: true,
+                customer: {
+                    select: {
+                        name: true,
+                        profileImg: true,
+                    },
+                },
+            },
+        });
+        // Update product average rating using aggregation
+        const { _avg: { rating: newAverage }, } = yield tx.review.aggregate({
+            where: { productId: payload.productId },
+            _avg: { rating: true },
+        });
+        yield tx.product.update({
+            where: { id: payload.productId },
+            data: { averageRating: newAverage },
+        });
+        return newReview;
+    }));
+    return review;
+});
+const addReviewReplyInDB = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const reply = yield prisma_1.default.reviewReply.create({
+        data: {
+            review: { connect: { id: payload.reviewId } },
+            vendor: { connect: { id: vendor.id } },
+            comment: payload.comment,
+        },
+        select: {
+            id: true,
+            comment: true,
+            createdAt: true,
+            vendor: {
+                select: {
+                    name: true,
+                    logo: true,
+                },
+            },
+        },
+    });
+    return reply;
+});
+const getVendorReviews = (user, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findFirstOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const reviews = yield prisma_1.default.review.findMany({
+        where: {
+            vendorId: vendor.id,
+        },
+        skip,
+        take: limit,
+        select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            customer: {
+                select: {
+                    name: true,
+                    profileImg: true,
+                },
+            },
+            product: {
+                select: {
+                    name: true,
+                    images: true,
+                },
+            },
+            replies: {
+                select: {
+                    id: true,
+                    comment: true,
+                    createdAt: true,
+                },
+                take: 1,
+            },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+    const total = yield prisma_1.default.review.count({
+        where: {
+            vendorId: vendor.id,
+        },
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: reviews,
+    };
+});
+const getAdminReviews = (user, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const reviews = yield prisma_1.default.review.findMany({
+        where: {},
+        skip,
+        take: limit,
+        select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            customer: {
+                select: {
+                    name: true,
+                    profileImg: true,
+                },
+            },
+            product: {
+                select: {
+                    name: true,
+                    images: true,
+                },
+            },
+            replies: {
+                select: {
+                    id: true,
+                    comment: true,
+                    createdAt: true,
+                },
+                take: 1,
+            },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+    const total = yield prisma_1.default.review.count({
+        where: {},
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: reviews,
+    };
+});
 exports.OrderServices = {
     initiateCheckoutInDB,
     verifyCheckoutInDB,
     getCustomerOrdersFromDB,
+    addReviewsInDB,
+    addReviewReplyInDB,
+    getVendorReviews,
+    getAdminReviews,
+    getAdminOrdersFromDB,
 };
