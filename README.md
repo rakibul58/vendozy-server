@@ -4,6 +4,8 @@
 
 Vendozy Server is a backend server application designed to manage and support the Vendozy platform. It provides APIs and services to handle various functionalities required by the Vendozy application.
 
+[Live Server](https://vendozy-server.vercel.app/)
+
 ## Features
 
 - User authentication and authorization
