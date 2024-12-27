@@ -53,6 +53,17 @@ const getAdminOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         data: result.data,
     });
 }));
+const getVendorOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield order_services_1.OrderServices.getVendorOrdersFromDB(req === null || req === void 0 ? void 0 : req.user, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Orders retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
 const addReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield order_services_1.OrderServices.addReviewsInDB(req === null || req === void 0 ? void 0 : req.user, req.body);
     (0, sendResponse_1.default)(res, {
@@ -101,5 +112,6 @@ exports.OrderControllers = {
     addReply,
     getVendorReviews,
     getAdminReviews,
-    getAdminOrders
+    getAdminOrders,
+    getVendorOrders
 };

@@ -16,6 +16,10 @@ router
   .get(auth(UserRole.CUSTOMER), OrderControllers.getCustomerOrders);
 
 router
+  .route("/vendor-orders")
+  .get(auth(UserRole.VENDOR), OrderControllers.getVendorOrders);
+
+router
   .route("/admin-orders")
   .get(auth(UserRole.ADMIN), OrderControllers.getAdminOrders);
 

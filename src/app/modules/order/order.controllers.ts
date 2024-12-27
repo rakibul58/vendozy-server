@@ -59,6 +59,24 @@ const getAdminOrders = catchAsync(
   }
 );
 
+const getVendorOrders = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = await OrderServices.getVendorOrdersFromDB(
+      req?.user,
+      options
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Orders retrieved successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  }
+);
+
 const addReview = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const result = await OrderServices.addReviewsInDB(req?.user, req.body);
@@ -123,5 +141,6 @@ export const OrderControllers = {
   addReply,
   getVendorReviews,
   getAdminReviews,
-  getAdminOrders
+  getAdminOrders,
+  getVendorOrders
 };

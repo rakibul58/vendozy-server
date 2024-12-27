@@ -342,6 +342,46 @@ const getAdminOrdersFromDB = async (
   };
 };
 
+const getVendorOrdersFromDB = async (
+  user: JwtPayload,
+  options: IPaginationOptions
+) => {
+  const vendor = await prisma.vendor.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const orders = await prisma.order.findMany({
+    where: {
+      vendorId: vendor.id,
+    },
+    skip,
+    take: limit,
+    include: {
+      customer: true,
+      vendor: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const total = await prisma.order.count({
+    where: { vendorId: vendor.id },
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: orders,
+  };
+};
+
 interface AddReviewPayload {
   productId: string;
   rating: number;
@@ -565,4 +605,5 @@ export const OrderServices = {
   getVendorReviews,
   getAdminReviews,
   getAdminOrdersFromDB,
+  getVendorOrdersFromDB
 };

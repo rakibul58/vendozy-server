@@ -291,6 +291,39 @@ const getAdminOrdersFromDB = (user, options) => __awaiter(void 0, void 0, void 0
         data: orders,
     };
 });
+const getVendorOrdersFromDB = (user, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const orders = yield prisma_1.default.order.findMany({
+        where: {
+            vendorId: vendor.id,
+        },
+        skip,
+        take: limit,
+        include: {
+            customer: true,
+            vendor: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    const total = yield prisma_1.default.order.count({
+        where: { vendorId: vendor.id },
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: orders,
+    };
+});
 const addReviewsInDB = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
     const customer = yield prisma_1.default.customer.findUniqueOrThrow({
         where: {
@@ -474,4 +507,5 @@ exports.OrderServices = {
     getVendorReviews,
     getAdminReviews,
     getAdminOrdersFromDB,
+    getVendorOrdersFromDB
 };
