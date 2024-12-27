@@ -37,8 +37,9 @@ const createCouponInDB = (payload) => __awaiter(void 0, void 0, void 0, function
 });
 const getAllCouponFromDB = (filters, options) => __awaiter(void 0, void 0, void 0, function* () {
     const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
-    const { searchTerm, isActive } = filters, filterData = __rest(filters, ["searchTerm", "isActive"]);
+    const { searchTerm, isActive, validNow } = filters, filterData = __rest(filters, ["searchTerm", "isActive", "validNow"]); // Extract validNow
     const andConditions = [];
+    // Search term condition
     if (searchTerm) {
         andConditions.push({
             OR: ["code", "description"].map((field) => ({
@@ -49,49 +50,47 @@ const getAllCouponFromDB = (filters, options) => __awaiter(void 0, void 0, void 
             })),
         });
     }
+    // Active status condition
     if (isActive !== undefined) {
         andConditions.push({
-            isActive: isActive === "true" ? true : false,
+            isActive: isActive === "true", // Simplified boolean conversion
         });
     }
-    // Add date range filter for valid coupons
-    if (filters.validNow === "true") {
+    // Valid date range condition
+    if (validNow === "true") {
         const currentDate = new Date();
         andConditions.push({
-            AND: [
-                {
-                    startDate: {
-                        lte: currentDate,
-                    },
-                },
-                {
-                    endDate: {
-                        gte: currentDate,
-                    },
-                },
-            ],
+            startDate: {
+                lte: currentDate,
+            },
+            endDate: {
+                gte: currentDate,
+            },
         });
     }
+    // Dynamic filters
     if (Object.keys(filterData).length > 0) {
-        const filterConditions = Object.keys(filterData).map((key) => ({
+        const filterConditions = Object.entries(filterData).map(([key, value]) => ({
             [key]: {
-                equals: filterData[key],
+                equals: value,
             },
         }));
         andConditions.push(...filterConditions);
     }
     const whereConditions = andConditions.length > 0 ? { AND: andConditions } : {};
-    const result = yield prisma_1.default.coupon.findMany({
-        where: whereConditions,
-        skip,
-        take: limit,
-        orderBy: options.sortBy && options.sortOrder
-            ? { [options.sortBy]: options.sortOrder }
-            : { createdAt: "desc" },
-    });
-    const total = yield prisma_1.default.coupon.count({
-        where: whereConditions,
-    });
+    const [result, total] = yield Promise.all([
+        prisma_1.default.coupon.findMany({
+            where: whereConditions,
+            skip,
+            take: limit,
+            orderBy: options.sortBy && options.sortOrder
+                ? { [options.sortBy]: options.sortOrder }
+                : { createdAt: "desc" },
+        }),
+        prisma_1.default.coupon.count({
+            where: whereConditions,
+        }),
+    ]);
     return {
         meta: {
             total,
