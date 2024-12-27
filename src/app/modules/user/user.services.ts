@@ -9,6 +9,8 @@ import {
 } from "./user.interface";
 import { jwtHelpers } from "../../../helpers/jwtHelpers";
 import { JwtPayload, Secret } from "jsonwebtoken";
+import { IPaginationOptions } from "../../interfaces/pagination";
+import { paginationHelper } from "../../../helpers/paginationHelper";
 
 const createAdminInDb = async (payload: TAdminPayload): Promise<Admin> => {
   const hashedPassword = await bcrypt.hash(
@@ -229,6 +231,131 @@ const updateCustomerProfile = async (
   return updatedCustomer;
 };
 
+const toggleVendorStatus = async (userId: string) => {
+  const result = await prisma.$transaction(async (transactionClient) => {
+    // Fetch the current user and vendor statuses
+    const user = await transactionClient.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { status: true },
+    });
+
+    // Toggle statuses
+    const newUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+    const newVendorStatus =
+      user.status === "SUSPENDED" ? "ACTIVE" : "BLACKLISTED";
+
+    // Update user status
+    await transactionClient.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: newUserStatus,
+      },
+    });
+
+    // Update vendor status
+    const updatedVendor = await transactionClient.vendor.update({
+      where: { userId },
+      data: {
+        status: newVendorStatus,
+      },
+    });
+
+    return updatedVendor;
+  });
+
+  return result;
+};
+
+const toggleCustomerStatus = async (userId: string) => {
+  const result = await prisma.$transaction(async (transactionClient) => {
+    // Fetch the current user and vendor statuses
+    const user = await transactionClient.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { status: true },
+    });
+
+    // Toggle statuses
+    const newUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+    const isDeleted = user.status === "SUSPENDED" ? false : true;
+
+    // Update user status
+    await transactionClient.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        status: newUserStatus,
+      },
+    });
+
+    // Update vendor status
+    const updatedVendor = await transactionClient.customer.update({
+      where: { userId },
+      data: {
+        isDeleted: isDeleted,
+      },
+    });
+
+    return updatedVendor;
+  });
+
+  return result;
+};
+
+const getAllCustomers = async (options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const result = await prisma.user.findMany({
+    where: { role: "CUSTOMER" },
+    skip,
+    take: limit,
+    include: {
+      customer: true,
+    },
+  });
+
+  const total = await prisma.user.count({
+    where: { role: "CUSTOMER" },
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
+const getAllVendors = async (options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const result = await prisma.user.findMany({
+    where: { role: "VENDOR" },
+    skip,
+    take: limit,
+    include: {
+      vendor: true,
+    },
+  });
+
+  const total = await prisma.user.count({
+    where: { role: "VENDOR" },
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
 export const UserServices = {
   createAdminInDb,
   createVendorInDB,
@@ -237,4 +364,8 @@ export const UserServices = {
   updateAdminProfile,
   updateVendorProfile,
   updateCustomerProfile,
+  toggleCustomerStatus,
+  toggleVendorStatus,
+  getAllCustomers,
+  getAllVendors
 };

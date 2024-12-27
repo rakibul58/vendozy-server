@@ -32,4 +32,16 @@ router
 router
     .route("/update-customer")
     .put((0, auth_1.default)(client_1.UserRole.CUSTOMER, client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateCustomerProfile);
+router
+    .route("/toggle-customer-status")
+    .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.toggleCustomerStatus);
+router
+    .route("/toggle-vendor-status")
+    .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.toggleVendorStatus);
+router
+    .route("/customer/:userId")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllCustomers);
+router
+    .route("/vendor/:userId")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllVendors);
 exports.UserRoutes = router;

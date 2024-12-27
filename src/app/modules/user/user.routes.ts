@@ -48,11 +48,28 @@ router
     auth(UserRole.VENDOR, UserRole.ADMIN),
     UserControllers.updateVendorProfile
   );
+
 router
   .route("/update-customer")
   .put(
     auth(UserRole.CUSTOMER, UserRole.ADMIN),
     UserControllers.updateCustomerProfile
   );
+
+router
+  .route("/toggle-customer-status")
+  .put(auth(UserRole.ADMIN), UserControllers.toggleCustomerStatus);
+
+router
+  .route("/toggle-vendor-status")
+  .put(auth(UserRole.ADMIN), UserControllers.toggleVendorStatus);
+
+router
+  .route("/customer/:userId")
+  .get(auth(UserRole.ADMIN), UserControllers.getAllCustomers);
+
+router
+  .route("/vendor/:userId")
+  .get(auth(UserRole.ADMIN), UserControllers.getAllVendors);
 
 export const UserRoutes = router;

@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import sendResponse from "../../../shared/sendResponse";
 import { UserServices } from "./user.services";
 import config from "../../../config";
+import pick from "../../../shared/pick";
 
 const createAdmin = catchAsync(async (req: Request, res: Response) => {
   const result = await UserServices.createAdminInDb(req.body);
@@ -85,6 +86,54 @@ const updateCustomerProfile = catchAsync(
   }
 );
 
+const getAllCustomers = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await UserServices.getAllCustomers(options);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Customers retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getAllVendors = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await UserServices.getAllVendors(options);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Vendors retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const toggleVendorStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.toggleVendorStatus(req.params.userId );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Vendors updated successfully",
+    data: result,
+  });
+});
+
+const toggleCustomerStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.toggleCustomerStatus(req.params.userId );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Customer updated successfully",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createAdmin,
   createVendor,
@@ -92,5 +141,9 @@ export const UserControllers = {
   getProfile,
   updateAdminProfile,
   updateVendorProfile,
-  updateCustomerProfile
+  updateCustomerProfile,
+  getAllVendors,
+  getAllCustomers,
+  toggleCustomerStatus,
+  toggleVendorStatus
 };

@@ -17,6 +17,7 @@ const http_status_codes_1 = require("http-status-codes");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const user_services_1 = require("./user.services");
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const createAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_services_1.UserServices.createAdminInDb(req.body);
     (0, sendResponse_1.default)(res, {
@@ -80,6 +81,46 @@ const updateCustomerProfile = (0, catchAsync_1.default)((req, res) => __awaiter(
         data: result,
     });
 }));
+const getAllCustomers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield user_services_1.UserServices.getAllCustomers(options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Customers retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+const getAllVendors = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield user_services_1.UserServices.getAllVendors(options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Vendors retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+const toggleVendorStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.toggleVendorStatus(req.params.userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Vendors updated successfully",
+        data: result,
+    });
+}));
+const toggleCustomerStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.toggleCustomerStatus(req.params.userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Customer updated successfully",
+        data: result,
+    });
+}));
 exports.UserControllers = {
     createAdmin,
     createVendor,
@@ -87,5 +128,9 @@ exports.UserControllers = {
     getProfile,
     updateAdminProfile,
     updateVendorProfile,
-    updateCustomerProfile
+    updateCustomerProfile,
+    getAllVendors,
+    getAllCustomers,
+    toggleCustomerStatus,
+    toggleVendorStatus
 };

@@ -50,6 +50,7 @@ const config_1 = __importDefault(require("../../../config"));
 const bcrypt = __importStar(require("bcrypt"));
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
+const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const createAdminInDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.salt_rounds));
     const userData = {
@@ -206,6 +207,110 @@ const updateCustomerProfile = (user, payload) => __awaiter(void 0, void 0, void 
     });
     return updatedCustomer;
 });
+const toggleVendorStatus = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        // Fetch the current user and vendor statuses
+        const user = yield transactionClient.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { status: true },
+        });
+        // Toggle statuses
+        const newUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+        const newVendorStatus = user.status === "SUSPENDED" ? "ACTIVE" : "BLACKLISTED";
+        // Update user status
+        yield transactionClient.user.update({
+            where: {
+                id: userId,
+            },
+            data: {
+                status: newUserStatus,
+            },
+        });
+        // Update vendor status
+        const updatedVendor = yield transactionClient.vendor.update({
+            where: { userId },
+            data: {
+                status: newVendorStatus,
+            },
+        });
+        return updatedVendor;
+    }));
+    return result;
+});
+const toggleCustomerStatus = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.$transaction((transactionClient) => __awaiter(void 0, void 0, void 0, function* () {
+        // Fetch the current user and vendor statuses
+        const user = yield transactionClient.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { status: true },
+        });
+        // Toggle statuses
+        const newUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+        const isDeleted = user.status === "SUSPENDED" ? false : true;
+        // Update user status
+        yield transactionClient.user.update({
+            where: {
+                id: userId,
+            },
+            data: {
+                status: newUserStatus,
+            },
+        });
+        // Update vendor status
+        const updatedVendor = yield transactionClient.customer.update({
+            where: { userId },
+            data: {
+                isDeleted: isDeleted,
+            },
+        });
+        return updatedVendor;
+    }));
+    return result;
+});
+const getAllCustomers = (options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const result = yield prisma_1.default.user.findMany({
+        where: { role: "CUSTOMER" },
+        skip,
+        take: limit,
+        include: {
+            customer: true,
+        },
+    });
+    const total = yield prisma_1.default.user.count({
+        where: { role: "CUSTOMER" },
+    });
+    return {
+        meta: {
+            total,
+            page,
+            limit,
+        },
+        data: result,
+    };
+});
+const getAllVendors = (options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const result = yield prisma_1.default.user.findMany({
+        where: { role: "VENDOR" },
+        skip,
+        take: limit,
+        include: {
+            vendor: true,
+        },
+    });
+    const total = yield prisma_1.default.user.count({
+        where: { role: "VENDOR" },
+    });
+    return {
+        meta: {
+            total,
+            page,
+            limit,
+        },
+        data: result,
+    };
+});
 exports.UserServices = {
     createAdminInDb,
     createVendorInDB,
@@ -214,4 +319,8 @@ exports.UserServices = {
     updateAdminProfile,
     updateVendorProfile,
     updateCustomerProfile,
+    toggleCustomerStatus,
+    toggleVendorStatus,
+    getAllCustomers,
+    getAllVendors
 };
