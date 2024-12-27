@@ -10,5 +10,8 @@ router
   .post(auth(UserRole.CUSTOMER), OrderControllers.initiatePayment);
 
 router.route("/verify-payment").post(OrderControllers.verifyPayment);
+router
+  .route("/customer-orders")
+  .get(auth(UserRole.CUSTOMER), OrderControllers.getCustomerOrders);
 
 export const OrderRoutes = router;

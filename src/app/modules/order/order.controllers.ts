@@ -4,6 +4,7 @@ import sendResponse from "../../../shared/sendResponse";
 import { OrderServices } from "./order.services";
 import { StatusCodes } from "http-status-codes";
 import { VerifyCheckoutQuery } from "./order.interface";
+import pick from "../../../shared/pick";
 
 const initiatePayment = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
@@ -25,4 +26,26 @@ const verifyPayment = catchAsync(async (req, res) => {
   res.send(result);
 });
 
-export const OrderControllers = { initiatePayment, verifyPayment };
+const getCustomerOrders = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = await OrderServices.getCustomerOrdersFromDB(
+      req?.user,
+      options
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Orders retrieved successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  }
+);
+
+export const OrderControllers = {
+  initiatePayment,
+  verifyPayment,
+  getCustomerOrders,
+};

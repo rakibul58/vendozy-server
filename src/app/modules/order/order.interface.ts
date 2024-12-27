@@ -23,3 +23,4 @@ export interface VerifyCheckoutQuery {
   customerName: string;
   amount: string;
 }
+

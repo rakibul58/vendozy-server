@@ -17,6 +17,7 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const order_services_1 = require("./order.services");
 const http_status_codes_1 = require("http-status-codes");
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const initiatePayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield order_services_1.OrderServices.initiateCheckoutInDB(req.user, req.body);
     (0, sendResponse_1.default)(res, {
@@ -30,4 +31,19 @@ const verifyPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     const result = yield order_services_1.OrderServices.verifyCheckoutInDB(req.query);
     res.send(result);
 }));
-exports.OrderControllers = { initiatePayment, verifyPayment };
+const getCustomerOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield order_services_1.OrderServices.getCustomerOrdersFromDB(req === null || req === void 0 ? void 0 : req.user, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Orders retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+exports.OrderControllers = {
+    initiatePayment,
+    verifyPayment,
+    getCustomerOrders,
+};

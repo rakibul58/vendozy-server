@@ -13,4 +13,7 @@ router
     .route("/initiate-payment")
     .post((0, auth_1.default)(client_1.UserRole.CUSTOMER), order_controllers_1.OrderControllers.initiatePayment);
 router.route("/verify-payment").post(order_controllers_1.OrderControllers.verifyPayment);
+router
+    .route("/customer-orders")
+    .get((0, auth_1.default)(client_1.UserRole.CUSTOMER), order_controllers_1.OrderControllers.getCustomerOrders);
 exports.OrderRoutes = router;

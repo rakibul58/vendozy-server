@@ -7,7 +7,7 @@ const pick = (obj, keys) => {
             finalObj[key] = obj[key];
         }
     }
-    console.log(finalObj);
+    // console.log(finalObj);
     return finalObj;
 };
 exports.default = pick;

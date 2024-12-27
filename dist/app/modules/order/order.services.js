@@ -19,6 +19,7 @@ const http_status_codes_1 = require("http-status-codes");
 const order_utils_1 = require("./order.utils");
 const path_1 = require("path");
 const fs_1 = require("fs");
+const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const initiateCheckoutInDB = (user, input) => __awaiter(void 0, void 0, void 0, function* () {
     const customer = yield prisma_1.default.customer.findUniqueOrThrow({
         where: { email: user === null || user === void 0 ? void 0 : user.email },
@@ -182,7 +183,90 @@ const verifyCheckoutInDB = (query) => __awaiter(void 0, void 0, void 0, function
         timeout: 30000,
     });
 });
+const getCustomerOrdersFromDB = (user, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const customer = yield prisma_1.default.customer.findFirstOrThrow({
+        where: {
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
+    });
+    const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const [orders, total] = yield prisma_1.default.$transaction([
+        prisma_1.default.orderItem.findMany({
+            where: {
+                order: {
+                    customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                },
+            },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                quantity: true,
+                price: true,
+                order: {
+                    select: {
+                        id: true,
+                        status: true,
+                        createdAt: true,
+                        vendor: {
+                            select: {
+                                id: true,
+                                name: true,
+                                logo: true,
+                            },
+                        },
+                    },
+                },
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        images: true,
+                        averageRating: true,
+                        Review: {
+                            where: {
+                                customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                            },
+                            select: {
+                                id: true,
+                                rating: true,
+                                comment: true,
+                                createdAt: true,
+                                replies: {
+                                    select: {
+                                        id: true,
+                                        comment: true,
+                                        createdAt: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                order: { createdAt: 'desc' }
+            },
+        }),
+        prisma_1.default.orderItem.count({
+            where: {
+                order: {
+                    customerId: customer === null || customer === void 0 ? void 0 : customer.id,
+                },
+            },
+        }),
+    ]);
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: orders,
+    };
+});
 exports.OrderServices = {
     initiateCheckoutInDB,
     verifyCheckoutInDB,
+    getCustomerOrdersFromDB,
 };
