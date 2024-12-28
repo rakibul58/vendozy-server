@@ -356,6 +356,99 @@ const getAllVendors = async (options: IPaginationOptions) => {
   };
 };
 
+const getCustomerDashboard = async (user: JwtPayload) => {
+  const customer = await prisma.customer.findUniqueOrThrow({
+    where: {
+      email: user?.email
+    }
+  })
+
+  // Get total orders and spent amount
+  const orders = await prisma.order.findMany({
+    where: {
+      customerId: customer.id,
+    },
+    include: {
+      orderItems: true,
+    },
+  });
+
+  // Get recent product views
+  const recentViews = await prisma.recentView.findMany({
+    where: {
+      customerId: customer.id,
+    },
+    include: {
+      product: true,
+    },
+    orderBy: {
+      viewedAt: "desc",
+    },
+    take: 10,
+  });
+
+  // Get review count
+  const reviewCount = await prisma.review.count({
+    where: {
+      customerId: customer.id,
+    },
+  });
+
+  // Calculate order status distribution
+  const ordersByStatus = await prisma.order.groupBy({
+    by: ["status"],
+    where: {
+      customerId: customer.id,
+    },
+    _count: true,
+  });
+
+  // Calculate total spent
+  const totalSpent = orders.reduce(
+    (acc, order) => acc + Number(order.totalAmount),
+    0
+  );
+
+  // Process orders for trend chart
+  const orderTrends = orders.reduce((acc: { [key: string]: number }, order) => {
+    const date = new Date(order.createdAt).toLocaleDateString();
+    if (!acc[date]) {
+      acc[date] = 0;
+    }
+    acc[date] += Number(order.totalAmount);
+    return acc;
+  }, {});
+
+  // Format data for frontend
+  const dashboardData = {
+    analytics: {
+      totalOrders: orders.length,
+      totalSpent: totalSpent.toFixed(2),
+      totalProductsViewed: recentViews.length,
+      totalReviews: reviewCount,
+    },
+    orders: Object.entries(orderTrends).map(([date, amount]) => ({
+      date,
+      amount,
+    })),
+    recentViews: recentViews.map((view) => ({
+      id: view.id,
+      product: {
+        name: view.product.name,
+      },
+      type: "Viewed",
+      date: view.viewedAt,
+      status: "Completed",
+    })),
+    ordersByStatus: ordersByStatus.map((status) => ({
+      status: status.status,
+      value: status._count,
+    })),
+  };
+
+  return dashboardData;
+};
+
 export const UserServices = {
   createAdminInDb,
   createVendorInDB,
@@ -367,5 +460,6 @@ export const UserServices = {
   toggleCustomerStatus,
   toggleVendorStatus,
   getAllCustomers,
-  getAllVendors
+  getAllVendors,
+  getCustomerDashboard
 };

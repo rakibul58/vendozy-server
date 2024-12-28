@@ -113,7 +113,7 @@ const getAllVendors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const toggleVendorStatus = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserServices.toggleVendorStatus(req.params.userId );
+  const result = await UserServices.toggleVendorStatus(req.params.userId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -124,7 +124,7 @@ const toggleVendorStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 const toggleCustomerStatus = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserServices.toggleCustomerStatus(req.params.userId );
+  const result = await UserServices.toggleCustomerStatus(req.params.userId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -133,6 +133,19 @@ const toggleCustomerStatus = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const getCustomerDashboard = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.getCustomerDashboard(req.user);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Dashboard Retrieved successfully",
+      data: result,
+    });
+  }
+);
 
 export const UserControllers = {
   createAdmin,
@@ -145,5 +158,6 @@ export const UserControllers = {
   getAllVendors,
   getAllCustomers,
   toggleCustomerStatus,
-  toggleVendorStatus
+  toggleVendorStatus,
+  getCustomerDashboard,
 };
