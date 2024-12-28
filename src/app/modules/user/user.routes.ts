@@ -69,6 +69,10 @@ router
   .get(auth(UserRole.CUSTOMER), UserControllers.getCustomerDashboard);
 
 router
+  .route("/vendor/dashboard")
+  .get(auth(UserRole.VENDOR), UserControllers.getVendorDashboard);
+
+router
   .route("/customer/:userId")
   .get(auth(UserRole.ADMIN), UserControllers.getAllCustomers);
 

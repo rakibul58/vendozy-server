@@ -130,6 +130,15 @@ const getCustomerDashboard = (0, catchAsync_1.default)((req, res) => __awaiter(v
         data: result,
     });
 }));
+const getVendorDashboard = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.getVendorDashboard(req.user);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Dashboard Retrieved successfully",
+        data: result,
+    });
+}));
 exports.UserControllers = {
     createAdmin,
     createVendor,
@@ -143,4 +152,5 @@ exports.UserControllers = {
     toggleCustomerStatus,
     toggleVendorStatus,
     getCustomerDashboard,
+    getVendorDashboard
 };

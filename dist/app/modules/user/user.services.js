@@ -45,7 +45,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserServices = void 0;
+exports.UserServices = exports.getVendorDashboard = void 0;
 const config_1 = __importDefault(require("../../../config"));
 const bcrypt = __importStar(require("bcrypt"));
 const client_1 = require("@prisma/client");
@@ -314,13 +314,14 @@ const getAllVendors = (options) => __awaiter(void 0, void 0, void 0, function* (
 const getCustomerDashboard = (user) => __awaiter(void 0, void 0, void 0, function* () {
     const customer = yield prisma_1.default.customer.findUniqueOrThrow({
         where: {
-            email: user === null || user === void 0 ? void 0 : user.email
-        }
+            email: user === null || user === void 0 ? void 0 : user.email,
+        },
     });
-    // Get total orders and spent amount
+    // Get only PAID orders
     const orders = yield prisma_1.default.order.findMany({
         where: {
             customerId: customer.id,
+            status: "PAID", // Only include paid orders
         },
         include: {
             orderItems: true,
@@ -345,7 +346,7 @@ const getCustomerDashboard = (user) => __awaiter(void 0, void 0, void 0, functio
             customerId: customer.id,
         },
     });
-    // Calculate order status distribution
+    // Calculate order status distribution - keep all statuses for visibility
     const ordersByStatus = yield prisma_1.default.order.groupBy({
         by: ["status"],
         where: {
@@ -353,9 +354,9 @@ const getCustomerDashboard = (user) => __awaiter(void 0, void 0, void 0, functio
         },
         _count: true,
     });
-    // Calculate total spent
+    // Calculate total spent - only from paid orders
     const totalSpent = orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
-    // Process orders for trend chart
+    // Process orders for trend chart - only paid orders
     const orderTrends = orders.reduce((acc, order) => {
         const date = new Date(order.createdAt).toLocaleDateString();
         if (!acc[date]) {
@@ -367,7 +368,7 @@ const getCustomerDashboard = (user) => __awaiter(void 0, void 0, void 0, functio
     // Format data for frontend
     const dashboardData = {
         analytics: {
-            totalOrders: orders.length,
+            totalOrders: orders.length, // Now represents only paid orders
             totalSpent: totalSpent.toFixed(2),
             totalProductsViewed: recentViews.length,
             totalReviews: reviewCount,
@@ -392,6 +393,109 @@ const getCustomerDashboard = (user) => __awaiter(void 0, void 0, void 0, functio
     };
     return dashboardData;
 });
+const getVendorDashboard = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
+        where: { email: user === null || user === void 0 ? void 0 : user.email },
+    });
+    // Get only PAID orders
+    const orders = yield prisma_1.default.order.findMany({
+        where: {
+            vendorId: vendor.id,
+            status: "PAID", // Only include paid orders
+        },
+        include: {
+            orderItems: {
+                include: { product: true },
+            },
+            customer: true,
+        },
+        orderBy: { createdAt: "desc" },
+    });
+    // Get product performance
+    const products = yield prisma_1.default.product.findMany({
+        where: { vendorId: vendor.id },
+        include: {
+            Review: true,
+            OrderItem: {
+                include: {
+                    order: true, // Include order to check status
+                },
+            },
+        },
+    });
+    // Calculate revenue metrics - only from paid orders
+    const revenueData = orders.reduce((acc, order) => {
+        const month = new Date(order.createdAt).toLocaleString("default", {
+            month: "short",
+        });
+        if (!acc[month])
+            acc[month] = 0;
+        acc[month] += Number(order.totalAmount);
+        return acc;
+    }, {});
+    // Calculate product performance metrics - only from paid orders
+    const productPerformance = products.map((product) => ({
+        name: product.name,
+        revenue: product.OrderItem.reduce((acc, item) => acc +
+            (item.order.status === "PAID" ? Number(item.price) * item.quantity : 0), 0),
+        units: product.OrderItem.reduce((acc, item) => acc + (item.order.status === "PAID" ? item.quantity : 0), 0),
+        rating: product.averageRating,
+    }));
+    // Get customer retention data - only from paid orders
+    const customerRetention = yield prisma_1.default.order.groupBy({
+        by: ["customerId"],
+        where: {
+            vendorId: vendor.id,
+            status: "PAID",
+        },
+        _count: true,
+    });
+    // Calculate review metrics
+    const reviewMetrics = yield prisma_1.default.review.groupBy({
+        by: ["rating"],
+        where: { vendorId: vendor.id },
+        _count: true,
+    });
+    // Format dashboard data
+    const dashboardData = {
+        analytics: {
+            totalRevenue: orders.reduce((acc, order) => acc + Number(order.totalAmount), 0),
+            totalOrders: orders.length,
+            totalProducts: products.length,
+            averageOrderValue: orders.length
+                ? orders.reduce((acc, order) => acc + Number(order.totalAmount), 0) /
+                    orders.length
+                : 0,
+            totalCustomers: new Set(orders.map((order) => order.customerId)).size,
+            averageRating: products.reduce((acc, product) => acc + product.averageRating, 0) /
+                products.length,
+        },
+        revenueChart: Object.entries(revenueData).map(([month, amount]) => ({
+            month,
+            amount: Number(amount.toFixed(2)),
+        })),
+        productPerformance: productPerformance
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 10),
+        customerRetention: {
+            oneTime: customerRetention.filter((c) => c._count === 1).length,
+            repeat: customerRetention.filter((c) => c._count > 1).length,
+        },
+        reviewDistribution: reviewMetrics.map((metric) => ({
+            rating: metric.rating,
+            count: metric._count,
+        })),
+        recentOrders: orders.slice(0, 10).map((order) => ({
+            id: order.id,
+            customer: order.customer.name,
+            amount: order.totalAmount,
+            status: order.status,
+            date: order.createdAt,
+        })),
+    };
+    return dashboardData;
+});
+exports.getVendorDashboard = getVendorDashboard;
 exports.UserServices = {
     createAdminInDb,
     createVendorInDB,
@@ -404,5 +508,6 @@ exports.UserServices = {
     toggleVendorStatus,
     getAllCustomers,
     getAllVendors,
-    getCustomerDashboard
+    getCustomerDashboard,
+    getVendorDashboard: exports.getVendorDashboard,
 };
