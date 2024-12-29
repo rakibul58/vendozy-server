@@ -39,6 +39,14 @@ router
   );
 
 router
+  .route("/newsletter/subscribe")
+  .post(UserControllers.subscribeToNewsletter);
+
+router
+  .route("/newsletters")
+  .post(auth(UserRole.ADMIN), UserControllers.subscribeToNewsletter);
+
+router
   .route("/update-admin")
   .put(auth(UserRole.ADMIN), UserControllers.updateAdminProfile);
 

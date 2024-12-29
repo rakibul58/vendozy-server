@@ -573,121 +573,203 @@ export const getVendorDashboard = async (user: JwtPayload) => {
 };
 
 export const getAdminDashboard = async () => {
-  // Get all paid orders with their relationships
-  const orders = await prisma.order.findMany({
-    where: {
-      status: "PAID",
-    },
-    include: {
-      customer: true,
-      vendor: true,
-      orderItems: true,
-    },
-  });
+  // Execute all top-level queries in parallel
+  const [
+    paidOrders,
+    vendorStats,
+    activeCustomerCount,
+    productCount,
+    pendingOnboardingCount,
+  ] = await Promise.all([
+    // Get summarized order data
+    prisma.order.findMany({
+      where: { status: "PAID" },
+      select: {
+        id: true,
+        totalAmount: true,
+        createdAt: true,
+        customer: { select: { name: true } },
+        vendor: { select: { name: true } },
+        status: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
 
-  // Get vendor metrics
-  const vendors = await prisma.vendor.groupBy({
-    by: ["status"],
-    _count: true,
-  });
+    prisma.vendor.groupBy({
+      by: ["status"],
+      _count: true,
+      where: { isDeleted: false },
+    }),
 
-  // Get customer metrics
-  const customers = await prisma.customer.aggregate({
-    _count: {
-      id: true,
-    },
-    where: {
-      isDeleted: false,
-    },
-  });
+    prisma.customer.count({
+      where: {
+        isDeleted: false,
+        Order: { some: { status: "PAID" } },
+      },
+    }),
 
-  // Calculate revenue metrics
-  const revenueData = orders.reduce((acc: { [key: string]: number }, order) => {
-    const month = new Date(order.createdAt).toLocaleString("default", {
-      month: "short",
-    });
-    if (!acc[month]) acc[month] = 0;
-    acc[month] += Number(order.totalAmount);
-    return acc;
-  }, {});
+    prisma.product.count({
+      where: { isDeleted: false },
+    }),
 
-  // Calculate top performing vendors
-  const vendorPerformance = await prisma.vendor.findMany({
+    prisma.vendor.count({
+      where: {
+        isOnboarded: false,
+        isDeleted: false,
+      },
+    }),
+  ]);
+
+  // Get top vendors using Prisma's native queries
+  const topVendors = await prisma.vendor.findMany({
     where: {
       isDeleted: false,
       status: "ACTIVE",
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
       Order: {
         where: {
           status: "PAID",
         },
+        select: {
+          totalAmount: true,
+        },
       },
-      Review: true,
+      Review: {
+        select: {
+          rating: true,
+        },
+      },
+      _count: {
+        select: {
+          Order: true,
+        },
+      },
     },
     take: 5,
   });
 
-  const dashboardData: AdminDashboardData = {
-    analytics: {
-      totalRevenue: orders.reduce(
-        (acc, order) => acc + Number(order.totalAmount),
+  // Process top vendors data
+  const processedTopVendors = topVendors
+    .map((vendor) => {
+      const revenue = vendor.Order.reduce(
+        (sum, order) => sum + parseFloat(order.totalAmount.toString()),
         0
-      ),
-      activeVendors: vendors.find((v) => v.status === "ACTIVE")?._count ?? 0,
-      totalCustomers: customers._count.id,
-      totalProducts: await prisma.product.count({
-        where: { isDeleted: false },
-      }),
-      totalOrders: orders.length,
-      averageOrderValue: orders.length
-        ? orders.reduce((acc, order) => acc + Number(order.totalAmount), 0) /
-          orders.length
-        : 0,
+      );
+      const avgRating =
+        vendor.Review.length > 0
+          ? vendor.Review.reduce((sum, review) => sum + review.rating, 0) /
+            vendor.Review.length
+          : 0;
+
+      return {
+        id: vendor.id,
+        name: vendor.name ?? "Unknown Vendor",
+        revenue: Number(revenue.toFixed(2)),
+        totalOrders: vendor._count.Order,
+        averageRating: Number(avgRating.toFixed(2)),
+      };
+    })
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // Calculate metrics
+  const totalRevenue = paidOrders.reduce(
+    (sum, order) => sum + parseFloat(order.totalAmount.toString()),
+    0
+  );
+
+  const averageOrderValue = paidOrders.length
+    ? totalRevenue / paidOrders.length
+    : 0;
+
+  const revenueByMonth = paidOrders.reduce(
+    (acc: { [key: string]: number }, order) => {
+      const month = new Date(order.createdAt).toLocaleString("default", {
+        month: "short",
+      });
+      acc[month] = (acc[month] || 0) + parseFloat(order.totalAmount.toString());
+      return acc;
+    },
+    {}
+  );
+
+  // Get total customers for inactive calculation
+  const totalCustomers = await prisma.customer.count({
+    where: { isDeleted: false },
+  });
+
+  // Return processed data
+  return {
+    analytics: {
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      activeVendors:
+        vendorStats.find((v) => v.status === "ACTIVE")?._count ?? 0,
+      totalCustomers,
+      totalProducts: productCount,
+      totalOrders: paidOrders.length,
+      averageOrderValue: Number(averageOrderValue.toFixed(2)),
     },
     vendorMetrics: {
-      activeVendors: vendors.find((v) => v.status === "ACTIVE")?._count ?? 0,
-      pendingOnboarding: await prisma.vendor.count({
-        where: { isOnboarded: false, isDeleted: false },
-      }),
-      blacklisted: vendors.find((v) => v.status === "BLACKLISTED")?._count ?? 0,
+      activeVendors:
+        vendorStats.find((v) => v.status === "ACTIVE")?._count ?? 0,
+      pendingOnboarding: pendingOnboardingCount,
+      blacklisted:
+        vendorStats.find((v) => v.status === "BLACKLISTED")?._count ?? 0,
     },
-    revenueChart: Object.entries(revenueData).map(([month, amount]) => ({
+    revenueChart: Object.entries(revenueByMonth).map(([month, amount]) => ({
       month,
       amount: Number(amount.toFixed(2)),
     })),
-    topVendors: vendorPerformance.map((vendor) => ({
-      id: vendor.id,
-      name: vendor.name ?? "Unknown Vendor",
-      revenue: vendor.Order.reduce(
-        (acc, order) => acc + Number(order.totalAmount),
-        0
-      ),
-      totalOrders: vendor.Order.length,
-      averageRating: vendor.Review.length
-        ? vendor.Review.reduce((acc, review) => acc + review.rating, 0) /
-          vendor.Review.length
-        : 0,
-    })),
+    topVendors: processedTopVendors,
     customerMetrics: {
-      active: await prisma.customer.count({
-        where: { isDeleted: false, Order: { some: { status: "PAID" } } },
-      }),
-      inactive: await prisma.customer.count({
-        where: { isDeleted: false, Order: { none: { status: "PAID" } } },
-      }),
+      active: activeCustomerCount,
+      inactive: totalCustomers - activeCustomerCount,
     },
-    recentOrders: orders.slice(0, 10).map((order) => ({
+    recentOrders: paidOrders.map((order) => ({
       id: order.id,
       customer: order.customer.name,
       vendor: order.vendor.name ?? "Unknown Vendor",
-      amount: Number(order.totalAmount),
+      amount: Number(parseFloat(order.totalAmount.toString()).toFixed(2)),
       status: order.status,
       date: order.createdAt,
     })),
   };
+};
 
-  return dashboardData;
+const subscribeToNewsletter = async ({ email }: { email: string }) => {
+  const subscriber = await prisma.newsletter.upsert({
+    where: { email },
+    update: { status: "SUBSCRIBED" },
+    create: { email, status: "SUBSCRIBED" },
+  });
+
+  return subscriber;
+};
+
+const getAllNewsLetter = async (options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+
+  const result = await prisma.newsletter.findMany({
+    where: {},
+    skip,
+    take: limit,
+  });
+
+  const total = await prisma.newsletter.count({
+    where: {},
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 export const UserServices = {
@@ -704,5 +786,7 @@ export const UserServices = {
   getAllVendors,
   getCustomerDashboard,
   getVendorDashboard,
-  getAdminDashboard
+  getAdminDashboard,
+  subscribeToNewsletter,
+  getAllNewsLetter
 };

@@ -148,6 +148,26 @@ const getAdminDashboard = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
+const subscribeToNewsletter = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_services_1.UserServices.subscribeToNewsletter(req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Subscribed successfully",
+        data: result,
+    });
+}));
+const getAllNewsLetter = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield user_services_1.UserServices.getAllNewsLetter(options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: "Newsletter retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
 exports.UserControllers = {
     createAdmin,
     createVendor,
@@ -163,4 +183,6 @@ exports.UserControllers = {
     getCustomerDashboard,
     getVendorDashboard,
     getAdminDashboard,
+    subscribeToNewsletter,
+    getAllNewsLetter
 };

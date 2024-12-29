@@ -251,6 +251,21 @@ model Coupon {
   @@map("coupons")
 }
 
+model Newsletter {
+  id        String           @id @default(uuid())
+  email     String           @unique
+  status    NewsletterStatus @default(SUBSCRIBED)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("newsletters")
+}
+
+enum NewsletterStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
 enum UserRole {
   ADMIN
   VENDOR

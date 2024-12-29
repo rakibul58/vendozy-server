@@ -173,6 +173,33 @@ const getAdminDashboard = catchAsync(
   }
 );
 
+const subscribeToNewsletter = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.subscribeToNewsletter(req.body);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Subscribed successfully",
+      data: result,
+    });
+  }
+);
+
+
+const getAllNewsLetter = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await UserServices.getAllNewsLetter(options);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Newsletter retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 export const UserControllers = {
   createAdmin,
   createVendor,
@@ -188,4 +215,6 @@ export const UserControllers = {
   getCustomerDashboard,
   getVendorDashboard,
   getAdminDashboard,
+  subscribeToNewsletter,
+  getAllNewsLetter
 };

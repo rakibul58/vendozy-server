@@ -24,6 +24,12 @@ router
     .route("/me")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.VENDOR, client_1.UserRole.CUSTOMER), user_controllers_1.UserControllers.getProfile);
 router
+    .route("/newsletter/subscribe")
+    .post(user_controllers_1.UserControllers.subscribeToNewsletter);
+router
+    .route("/newsletters")
+    .post((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.subscribeToNewsletter);
+router
     .route("/update-admin")
     .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateAdminProfile);
 router
