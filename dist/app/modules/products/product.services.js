@@ -39,6 +39,24 @@ const createProductInDB = (payload) => __awaiter(void 0, void 0, void 0, functio
     });
     return result;
 });
+const updateProductInDB = (id, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.product.update({
+        where: {
+            id,
+        },
+        data: payload,
+    });
+    return result;
+});
+const deleteProductInDB = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.product.update({
+        where: {
+            id,
+        },
+        data: { isDeleted: true },
+    });
+    return result;
+});
 const getAllProductFromDB = (filters, options, user) => __awaiter(void 0, void 0, void 0, function* () {
     const { limit, page, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm, category, vendor, isFlashSale, minPrice, maxPrice } = filters, filterData = __rest(filters, ["searchTerm", "category", "vendor", "isFlashSale", "minPrice", "maxPrice"]);
@@ -293,4 +311,6 @@ exports.ProductServices = {
     getAllProductFromDB,
     getProductByIdFromDB,
     getRecentViewProductsFromDB,
+    updateProductInDB,
+    deleteProductInDB
 };

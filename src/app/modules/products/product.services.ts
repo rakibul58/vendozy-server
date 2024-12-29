@@ -19,6 +19,28 @@ const createProductInDB = async (payload: Product): Promise<Product> => {
   return result;
 };
 
+const updateProductInDB = async (id: string, payload: Partial<Product>) => {
+  const result = await prisma.product.update({
+    where: {
+      id,
+    },
+    data: payload,
+  });
+
+  return result;
+};
+
+const deleteProductInDB = async (id: string) => {
+  const result = await prisma.product.update({
+    where: {
+      id,
+    },
+    data: { isDeleted: true },
+  });
+
+  return result;
+};
+
 const getAllProductFromDB = async (
   filters: TProductFilterRequest,
   options: IPaginationOptions,
@@ -320,4 +342,6 @@ export const ProductServices = {
   getAllProductFromDB,
   getProductByIdFromDB,
   getRecentViewProductsFromDB,
+  updateProductInDB,
+  deleteProductInDB
 };

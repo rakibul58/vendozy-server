@@ -20,6 +20,11 @@ router
 router
   .route("/recent-view")
   .get(auth(UserRole.CUSTOMER), ProductControllers.getRecentViewProducts);
-router.route("/:id").get(optionalAuth, ProductControllers.getProductById);
+
+router
+  .route("/:id")
+  .get(optionalAuth, ProductControllers.getProductById)
+  .put(auth(UserRole.VENDOR), ProductControllers.updateProduct)
+  .delete(auth(UserRole.VENDOR), ProductControllers.deleteProduct);
 
 export const ProductRoutes = router;

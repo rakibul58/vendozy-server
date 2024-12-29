@@ -19,5 +19,9 @@ router
 router
     .route("/recent-view")
     .get((0, auth_1.default)(client_1.UserRole.CUSTOMER), product_controllers_1.ProductControllers.getRecentViewProducts);
-router.route("/:id").get(optionalAuth_1.optionalAuth, product_controllers_1.ProductControllers.getProductById);
+router
+    .route("/:id")
+    .get(optionalAuth_1.optionalAuth, product_controllers_1.ProductControllers.getProductById)
+    .put((0, auth_1.default)(client_1.UserRole.VENDOR), product_controllers_1.ProductControllers.updateProduct)
+    .delete((0, auth_1.default)(client_1.UserRole.VENDOR), product_controllers_1.ProductControllers.deleteProduct);
 exports.ProductRoutes = router;
