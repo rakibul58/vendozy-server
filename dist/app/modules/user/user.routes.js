@@ -28,7 +28,7 @@ router
     .post(user_controllers_1.UserControllers.subscribeToNewsletter);
 router
     .route("/newsletters")
-    .post((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.subscribeToNewsletter);
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllNewsLetter);
 router
     .route("/update-admin")
     .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateAdminProfile);

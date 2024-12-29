@@ -758,9 +758,7 @@ const getAllNewsLetter = async (options: IPaginationOptions) => {
     take: limit,
   });
 
-  const total = await prisma.newsletter.count({
-    where: {},
-  });
+  const total = await prisma.newsletter.count({ where: {} });
 
   return {
     meta: {
@@ -788,5 +786,5 @@ export const UserServices = {
   getVendorDashboard,
   getAdminDashboard,
   subscribeToNewsletter,
-  getAllNewsLetter
+  getAllNewsLetter,
 };

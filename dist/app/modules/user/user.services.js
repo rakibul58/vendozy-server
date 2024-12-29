@@ -652,9 +652,7 @@ const getAllNewsLetter = (options) => __awaiter(void 0, void 0, void 0, function
         skip,
         take: limit,
     });
-    const total = yield prisma_1.default.newsletter.count({
-        where: {},
-    });
+    const total = yield prisma_1.default.newsletter.count({ where: {} });
     return {
         meta: {
             total,
@@ -680,5 +678,5 @@ exports.UserServices = {
     getVendorDashboard: exports.getVendorDashboard,
     getAdminDashboard: exports.getAdminDashboard,
     subscribeToNewsletter,
-    getAllNewsLetter
+    getAllNewsLetter,
 };

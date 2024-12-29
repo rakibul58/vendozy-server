@@ -44,7 +44,7 @@ router
 
 router
   .route("/newsletters")
-  .post(auth(UserRole.ADMIN), UserControllers.subscribeToNewsletter);
+  .get(auth(UserRole.ADMIN), UserControllers.getAllNewsLetter);
 
 router
   .route("/update-admin")
