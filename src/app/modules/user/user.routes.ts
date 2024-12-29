@@ -88,8 +88,6 @@ router
   .route("/customer/:userId")
   .get(auth(UserRole.ADMIN), UserControllers.getAllCustomers);
 
-router
-  .route("/vendor/:userId")
-  .get(auth(UserRole.ADMIN), UserControllers.getAllVendors);
+router.route("/vendor/:userId").get(UserControllers.getAllVendors);
 
 export const UserRoutes = router;

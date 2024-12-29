@@ -56,7 +56,5 @@ router
 router
     .route("/customer/:userId")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllCustomers);
-router
-    .route("/vendor/:userId")
-    .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllVendors);
+router.route("/vendor/:userId").get(user_controllers_1.UserControllers.getAllVendors);
 exports.UserRoutes = router;

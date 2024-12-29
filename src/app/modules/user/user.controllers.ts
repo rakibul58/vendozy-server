@@ -100,13 +100,14 @@ const getAllCustomers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllVendors = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ["name", "description", "searchTerm"]);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
-  const result = await UserServices.getAllVendors(options);
+  const result = await UserServices.getAllVendors(filters, options);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Vendors retrieved successfully",
+    message: "Categories retrieved successfully",
     meta: result.meta,
     data: result.data,
   });

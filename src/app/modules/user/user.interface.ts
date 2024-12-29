@@ -67,3 +67,9 @@ export interface AdminDashboardData {
     date: Date;
   }[];
 }
+
+export type TVendorFilterRequest = {
+  searchTerm?: string | undefined;
+  name?: string | undefined;
+  description?: string | undefined;
+};

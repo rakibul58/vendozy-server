@@ -93,12 +93,13 @@ const getAllCustomers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0
     });
 }));
 const getAllVendors = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, ["name", "description", "searchTerm"]);
     const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
-    const result = yield user_services_1.UserServices.getAllVendors(options);
+    const result = yield user_services_1.UserServices.getAllVendors(filters, options);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: "Vendors retrieved successfully",
+        message: "Categories retrieved successfully",
         meta: result.meta,
         data: result.data,
     });
