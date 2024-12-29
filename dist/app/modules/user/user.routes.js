@@ -39,10 +39,10 @@ router
     .route("/update-customer")
     .put((0, auth_1.default)(client_1.UserRole.CUSTOMER, client_1.UserRole.ADMIN), user_controllers_1.UserControllers.updateCustomerProfile);
 router
-    .route("/toggle-customer-status")
+    .route("/toggle-customer-status/:userId")
     .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.toggleCustomerStatus);
 router
-    .route("/toggle-vendor-status")
+    .route("/toggle-vendor-status/:userId")
     .put((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.toggleVendorStatus);
 router
     .route("/customer/dashboard")
@@ -54,7 +54,7 @@ router
     .route("/admin/dashboard")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAdminDashboard);
 router
-    .route("/customer/:userId")
+    .route("/customers")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN), user_controllers_1.UserControllers.getAllCustomers);
-router.route("/vendor/:userId").get(user_controllers_1.UserControllers.getAllVendors);
+router.route("/vendors").get(user_controllers_1.UserControllers.getAllVendors);
 exports.UserRoutes = router;

@@ -65,11 +65,11 @@ router
   );
 
 router
-  .route("/toggle-customer-status")
+  .route("/toggle-customer-status/:userId")
   .put(auth(UserRole.ADMIN), UserControllers.toggleCustomerStatus);
 
 router
-  .route("/toggle-vendor-status")
+  .route("/toggle-vendor-status/:userId")
   .put(auth(UserRole.ADMIN), UserControllers.toggleVendorStatus);
 
 router
@@ -85,9 +85,9 @@ router
   .get(auth(UserRole.ADMIN), UserControllers.getAdminDashboard);
 
 router
-  .route("/customer/:userId")
+  .route("/customers")
   .get(auth(UserRole.ADMIN), UserControllers.getAllCustomers);
 
-router.route("/vendor/:userId").get(UserControllers.getAllVendors);
+router.route("/vendors").get(UserControllers.getAllVendors);
 
 export const UserRoutes = router;
