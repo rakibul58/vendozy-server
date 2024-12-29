@@ -22,6 +22,6 @@ router
 router
     .route("/:id")
     .get(optionalAuth_1.optionalAuth, product_controllers_1.ProductControllers.getProductById)
-    .put((0, auth_1.default)(client_1.UserRole.VENDOR), product_controllers_1.ProductControllers.updateProduct)
-    .delete((0, auth_1.default)(client_1.UserRole.VENDOR), product_controllers_1.ProductControllers.deleteProduct);
+    .put((0, auth_1.default)(client_1.UserRole.VENDOR, client_1.UserRole.ADMIN), product_controllers_1.ProductControllers.updateProduct)
+    .delete((0, auth_1.default)(client_1.UserRole.VENDOR, client_1.UserRole.ADMIN), product_controllers_1.ProductControllers.deleteProduct);
 exports.ProductRoutes = router;

@@ -24,7 +24,10 @@ router
 router
   .route("/:id")
   .get(optionalAuth, ProductControllers.getProductById)
-  .put(auth(UserRole.VENDOR), ProductControllers.updateProduct)
-  .delete(auth(UserRole.VENDOR), ProductControllers.deleteProduct);
+  .put(
+    auth(UserRole.VENDOR, UserRole.ADMIN),
+    ProductControllers.updateProduct
+  )
+  .delete(auth(UserRole.VENDOR, UserRole.ADMIN), ProductControllers.deleteProduct);
 
 export const ProductRoutes = router;
