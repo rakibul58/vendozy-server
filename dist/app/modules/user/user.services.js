@@ -45,7 +45,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserServices = exports.getVendorDashboard = void 0;
+exports.UserServices = exports.getAdminDashboard = exports.getVendorDashboard = void 0;
 const config_1 = __importDefault(require("../../../config"));
 const bcrypt = __importStar(require("bcrypt"));
 const client_1 = require("@prisma/client");
@@ -496,6 +496,120 @@ const getVendorDashboard = (user) => __awaiter(void 0, void 0, void 0, function*
     return dashboardData;
 });
 exports.getVendorDashboard = getVendorDashboard;
+const getAdminDashboard = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d, _e, _f;
+    // Get all paid orders with their relationships
+    const orders = yield prisma_1.default.order.findMany({
+        where: {
+            status: "PAID",
+        },
+        include: {
+            customer: true,
+            vendor: true,
+            orderItems: true,
+        },
+    });
+    // Get vendor metrics
+    const vendors = yield prisma_1.default.vendor.groupBy({
+        by: ["status"],
+        _count: true,
+    });
+    // Get customer metrics
+    const customers = yield prisma_1.default.customer.aggregate({
+        _count: {
+            id: true,
+        },
+        where: {
+            isDeleted: false,
+        },
+    });
+    // Calculate revenue metrics
+    const revenueData = orders.reduce((acc, order) => {
+        const month = new Date(order.createdAt).toLocaleString("default", {
+            month: "short",
+        });
+        if (!acc[month])
+            acc[month] = 0;
+        acc[month] += Number(order.totalAmount);
+        return acc;
+    }, {});
+    // Calculate top performing vendors
+    const vendorPerformance = yield prisma_1.default.vendor.findMany({
+        where: {
+            isDeleted: false,
+            status: "ACTIVE",
+        },
+        include: {
+            Order: {
+                where: {
+                    status: "PAID",
+                },
+            },
+            Review: true,
+        },
+        take: 5,
+    });
+    const dashboardData = {
+        analytics: {
+            totalRevenue: orders.reduce((acc, order) => acc + Number(order.totalAmount), 0),
+            activeVendors: (_b = (_a = vendors.find((v) => v.status === "ACTIVE")) === null || _a === void 0 ? void 0 : _a._count) !== null && _b !== void 0 ? _b : 0,
+            totalCustomers: customers._count.id,
+            totalProducts: yield prisma_1.default.product.count({
+                where: { isDeleted: false },
+            }),
+            totalOrders: orders.length,
+            averageOrderValue: orders.length
+                ? orders.reduce((acc, order) => acc + Number(order.totalAmount), 0) /
+                    orders.length
+                : 0,
+        },
+        vendorMetrics: {
+            activeVendors: (_d = (_c = vendors.find((v) => v.status === "ACTIVE")) === null || _c === void 0 ? void 0 : _c._count) !== null && _d !== void 0 ? _d : 0,
+            pendingOnboarding: yield prisma_1.default.vendor.count({
+                where: { isOnboarded: false, isDeleted: false },
+            }),
+            blacklisted: (_f = (_e = vendors.find((v) => v.status === "BLACKLISTED")) === null || _e === void 0 ? void 0 : _e._count) !== null && _f !== void 0 ? _f : 0,
+        },
+        revenueChart: Object.entries(revenueData).map(([month, amount]) => ({
+            month,
+            amount: Number(amount.toFixed(2)),
+        })),
+        topVendors: vendorPerformance.map((vendor) => {
+            var _a;
+            return ({
+                id: vendor.id,
+                name: (_a = vendor.name) !== null && _a !== void 0 ? _a : "Unknown Vendor",
+                revenue: vendor.Order.reduce((acc, order) => acc + Number(order.totalAmount), 0),
+                totalOrders: vendor.Order.length,
+                averageRating: vendor.Review.length
+                    ? vendor.Review.reduce((acc, review) => acc + review.rating, 0) /
+                        vendor.Review.length
+                    : 0,
+            });
+        }),
+        customerMetrics: {
+            active: yield prisma_1.default.customer.count({
+                where: { isDeleted: false, Order: { some: { status: "PAID" } } },
+            }),
+            inactive: yield prisma_1.default.customer.count({
+                where: { isDeleted: false, Order: { none: { status: "PAID" } } },
+            }),
+        },
+        recentOrders: orders.slice(0, 10).map((order) => {
+            var _a;
+            return ({
+                id: order.id,
+                customer: order.customer.name,
+                vendor: (_a = order.vendor.name) !== null && _a !== void 0 ? _a : "Unknown Vendor",
+                amount: Number(order.totalAmount),
+                status: order.status,
+                date: order.createdAt,
+            });
+        }),
+    };
+    return dashboardData;
+});
+exports.getAdminDashboard = getAdminDashboard;
 exports.UserServices = {
     createAdminInDb,
     createVendorInDB,
@@ -510,4 +624,5 @@ exports.UserServices = {
     getAllVendors,
     getCustomerDashboard,
     getVendorDashboard: exports.getVendorDashboard,
+    getAdminDashboard: exports.getAdminDashboard
 };

@@ -160,6 +160,19 @@ const getVendorDashboard = catchAsync(
   }
 );
 
+const getAdminDashboard = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await UserServices.getAdminDashboard();
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Dashboard Retrieved successfully",
+      data: result,
+    });
+  }
+);
+
 export const UserControllers = {
   createAdmin,
   createVendor,
@@ -173,5 +186,6 @@ export const UserControllers = {
   toggleCustomerStatus,
   toggleVendorStatus,
   getCustomerDashboard,
-  getVendorDashboard
+  getVendorDashboard,
+  getAdminDashboard,
 };

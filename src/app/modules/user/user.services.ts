@@ -3,6 +3,7 @@ import * as bcrypt from "bcrypt";
 import { Admin, Customer, UserRole, Vendor } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import {
+  AdminDashboardData,
   TAdminPayload,
   TCustomerPayload,
   TVendorPayload,
@@ -571,6 +572,124 @@ export const getVendorDashboard = async (user: JwtPayload) => {
   return dashboardData;
 };
 
+export const getAdminDashboard = async () => {
+  // Get all paid orders with their relationships
+  const orders = await prisma.order.findMany({
+    where: {
+      status: "PAID",
+    },
+    include: {
+      customer: true,
+      vendor: true,
+      orderItems: true,
+    },
+  });
+
+  // Get vendor metrics
+  const vendors = await prisma.vendor.groupBy({
+    by: ["status"],
+    _count: true,
+  });
+
+  // Get customer metrics
+  const customers = await prisma.customer.aggregate({
+    _count: {
+      id: true,
+    },
+    where: {
+      isDeleted: false,
+    },
+  });
+
+  // Calculate revenue metrics
+  const revenueData = orders.reduce((acc: { [key: string]: number }, order) => {
+    const month = new Date(order.createdAt).toLocaleString("default", {
+      month: "short",
+    });
+    if (!acc[month]) acc[month] = 0;
+    acc[month] += Number(order.totalAmount);
+    return acc;
+  }, {});
+
+  // Calculate top performing vendors
+  const vendorPerformance = await prisma.vendor.findMany({
+    where: {
+      isDeleted: false,
+      status: "ACTIVE",
+    },
+    include: {
+      Order: {
+        where: {
+          status: "PAID",
+        },
+      },
+      Review: true,
+    },
+    take: 5,
+  });
+
+  const dashboardData: AdminDashboardData = {
+    analytics: {
+      totalRevenue: orders.reduce(
+        (acc, order) => acc + Number(order.totalAmount),
+        0
+      ),
+      activeVendors: vendors.find((v) => v.status === "ACTIVE")?._count ?? 0,
+      totalCustomers: customers._count.id,
+      totalProducts: await prisma.product.count({
+        where: { isDeleted: false },
+      }),
+      totalOrders: orders.length,
+      averageOrderValue: orders.length
+        ? orders.reduce((acc, order) => acc + Number(order.totalAmount), 0) /
+          orders.length
+        : 0,
+    },
+    vendorMetrics: {
+      activeVendors: vendors.find((v) => v.status === "ACTIVE")?._count ?? 0,
+      pendingOnboarding: await prisma.vendor.count({
+        where: { isOnboarded: false, isDeleted: false },
+      }),
+      blacklisted: vendors.find((v) => v.status === "BLACKLISTED")?._count ?? 0,
+    },
+    revenueChart: Object.entries(revenueData).map(([month, amount]) => ({
+      month,
+      amount: Number(amount.toFixed(2)),
+    })),
+    topVendors: vendorPerformance.map((vendor) => ({
+      id: vendor.id,
+      name: vendor.name ?? "Unknown Vendor",
+      revenue: vendor.Order.reduce(
+        (acc, order) => acc + Number(order.totalAmount),
+        0
+      ),
+      totalOrders: vendor.Order.length,
+      averageRating: vendor.Review.length
+        ? vendor.Review.reduce((acc, review) => acc + review.rating, 0) /
+          vendor.Review.length
+        : 0,
+    })),
+    customerMetrics: {
+      active: await prisma.customer.count({
+        where: { isDeleted: false, Order: { some: { status: "PAID" } } },
+      }),
+      inactive: await prisma.customer.count({
+        where: { isDeleted: false, Order: { none: { status: "PAID" } } },
+      }),
+    },
+    recentOrders: orders.slice(0, 10).map((order) => ({
+      id: order.id,
+      customer: order.customer.name,
+      vendor: order.vendor.name ?? "Unknown Vendor",
+      amount: Number(order.totalAmount),
+      status: order.status,
+      date: order.createdAt,
+    })),
+  };
+
+  return dashboardData;
+};
+
 export const UserServices = {
   createAdminInDb,
   createVendorInDB,
@@ -585,4 +704,5 @@ export const UserServices = {
   getAllVendors,
   getCustomerDashboard,
   getVendorDashboard,
+  getAdminDashboard
 };

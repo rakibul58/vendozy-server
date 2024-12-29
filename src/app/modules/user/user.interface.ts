@@ -28,3 +28,42 @@ export type TCustomerPayload = {
     profileImg: string;
   };
 };
+
+export interface AdminDashboardData {
+  analytics: {
+    totalRevenue: number;
+    activeVendors: number;
+    totalCustomers: number;
+    totalProducts: number;
+    totalOrders: number;
+    averageOrderValue: number;
+  };
+  vendorMetrics: {
+    activeVendors: number;
+    pendingOnboarding: number;
+    blacklisted: number;
+  };
+  revenueChart: {
+    month: string;
+    amount: number;
+  }[];
+  topVendors: {
+    id: string;
+    name: string;
+    revenue: number;
+    totalOrders: number;
+    averageRating: number;
+  }[];
+  customerMetrics: {
+    active: number;
+    inactive: number;
+  };
+  recentOrders: {
+    id: string;
+    customer: string;
+    vendor: string;
+    amount: number;
+    status: string;
+    date: Date;
+  }[];
+}

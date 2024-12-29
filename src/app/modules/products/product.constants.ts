@@ -7,5 +7,6 @@ export const productFilterableFields: string[] = [
   "vendor",
   "isFlashSale",
   "maxPrice",
-  "minPrice"
+  "minPrice",
+  "averageRating"
 ];
