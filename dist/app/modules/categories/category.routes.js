@@ -16,6 +16,9 @@ router
     .get(category_controllers_1.CategoryControllers.getAllCategory)
     .post((0, auth_1.default)(client_1.UserRole.ADMIN), (0, validateRequest_1.default)(category_validations_1.CategoryValidations.createCategoryValidationSchema), category_controllers_1.CategoryControllers.createCategory);
 router
+    .route("/categoryWithProduct")
+    .get(category_controllers_1.CategoryControllers.getCategoryWithProduct);
+router
     .route("/:id")
     .get(category_controllers_1.CategoryControllers.getSingleCategory)
     .put((0, auth_1.default)(client_1.UserRole.ADMIN), (0, validateRequest_1.default)(category_validations_1.CategoryValidations.updateCategoryValidationSchema), category_controllers_1.CategoryControllers.updateCategory)

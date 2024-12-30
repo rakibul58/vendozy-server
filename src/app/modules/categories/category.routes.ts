@@ -17,6 +17,10 @@ router
   );
 
 router
+  .route("/categoryWithProduct")
+  .get(CategoryControllers.getCategoryWithProduct);
+
+router
   .route("/:id")
   .get(CategoryControllers.getSingleCategory)
   .put(

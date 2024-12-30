@@ -144,10 +144,59 @@ const deleteCategoryFromDB = async (id: string): Promise<Category | null> => {
   return result;
 };
 
+const getCategoriesWithProduct = async () => {
+  const categories = await prisma.category.findMany({
+    where: {
+      isDeleted: false,
+    },
+    include: {
+      products: {
+        where: {
+          isDeleted: false,
+        },
+        distinct: ["name"],
+        take: 5,
+        orderBy: {
+          averageRating: "desc",
+        },
+      },
+    },
+  });
+
+  // Group products by common characteristics or types
+  const categoriesWithSubcategories = categories.map((category) => {
+    const productTypes = new Set(
+      category.products.map((product) => {
+        return product.name.split(" ")[0];
+      })
+    );
+
+    return {
+      id: category.id,
+      name: category.name,
+      image: category.image,
+      description: category.description,
+      subcategories: Array.from(productTypes).map((type) => ({
+        name: type,
+        items: category.products
+          .filter((product) => product.name.startsWith(type))
+          .map((product) => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+          })),
+      })),
+    };
+  });
+
+  return categoriesWithSubcategories;
+};
+
 export const CategoryServices = {
   createCategoryInDB,
   getAllCategoryFromDB,
   getCategoryByIdFromDB,
   updateCategoryIntoDB,
   deleteCategoryFromDB,
+  getCategoriesWithProduct
 };
