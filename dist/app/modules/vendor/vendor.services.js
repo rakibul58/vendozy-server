@@ -30,18 +30,21 @@ const vendorOnboardingInDB = (user, payload) => __awaiter(void 0, void 0, void 0
     return result;
 });
 const getVendorShopFromDB = (vendorId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const vendor = yield prisma_1.default.vendor.findUniqueOrThrow({
         where: { id: vendorId },
         include: {
+            user: {
+                select: {
+                    createdAt: true,
+                },
+            },
             _count: {
-                select: { shopFollowers: true },
+                select: { shopFollowers: true, products: true },
             },
         },
     });
-    const productCount = yield prisma_1.default.product.count({
-        where: { vendorId: vendorId },
-    });
-    return Object.assign(Object.assign({}, vendor), { followerCount: vendor._count.shopFollowers, productCount });
+    return Object.assign(Object.assign({}, vendor), { followerCount: vendor._count.shopFollowers, productCount: vendor._count.products, joinDate: (_a = vendor === null || vendor === void 0 ? void 0 : vendor.user) === null || _a === void 0 ? void 0 : _a.createdAt });
 });
 const followShopsInDB = (user, vendorId) => __awaiter(void 0, void 0, void 0, function* () {
     const customer = yield prisma_1.default.customer.findUniqueOrThrow({

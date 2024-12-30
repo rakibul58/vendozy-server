@@ -331,6 +331,16 @@ const getAllVendors = (filters, options) => __awaiter(void 0, void 0, void 0, fu
         where: whereConditions,
         skip,
         take: limit,
+        include: {
+            user: {
+                select: {
+                    createdAt: true,
+                },
+            },
+            _count: {
+                select: { shopFollowers: true, products: true },
+            },
+        },
         orderBy: options.sortBy && options.sortOrder
             ? { [options.sortBy]: options.sortOrder }
             : { user: { createdAt: "desc" } },

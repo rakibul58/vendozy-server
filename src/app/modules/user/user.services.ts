@@ -373,6 +373,16 @@ const getAllVendors = async (
     where: whereConditions,
     skip,
     take: limit,
+    include: {
+      user: {
+        select: {
+          createdAt: true,
+        },
+      },
+      _count: {
+        select: { shopFollowers: true, products: true },
+      },
+    },
     orderBy:
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }

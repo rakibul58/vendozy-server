@@ -28,20 +28,22 @@ const getVendorShopFromDB = async (vendorId: string) => {
   const vendor = await prisma.vendor.findUniqueOrThrow({
     where: { id: vendorId },
     include: {
+      user: {
+        select: {
+          createdAt: true,
+        },
+      },
       _count: {
-        select: { shopFollowers: true },
+        select: { shopFollowers: true, products: true },
       },
     },
-  });
-
-  const productCount = await prisma.product.count({
-    where: { vendorId: vendorId },
   });
 
   return {
     ...vendor,
     followerCount: vendor._count.shopFollowers,
-    productCount,
+    productCount: vendor._count.products,
+    joinDate: vendor?.user?.createdAt,
   };
 };
 
