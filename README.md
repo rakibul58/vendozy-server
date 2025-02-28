@@ -17,7 +17,7 @@ Vendozy Server is a backend server application designed to manage and support th
 
 - Node.js
 - Express.js
-- MongoDB
+- PostgreSQL
 - JWT for authentication
 - Aamarpay for payment processing
 
